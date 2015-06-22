@@ -105,6 +105,34 @@ describe "Starting Atom", ->
           .then ({value}) -> expect(value).toBe filePath
 
   describe "when there is already a window open", ->
+    it "searches all open panes when opening files", ->
+      tempFilePath = "a-file"
+      fs.writeFileSync(tempFilePath, "This file was already here.")
+
+      runAtom [tempFilePath], {ATOM_HOME: atomHome}, (client) ->
+        client
+          .waitForWindowCount(1, 1000)
+          .waitForExist("atom-workspace", 5000)
+          .waitForPaneItemCount(1, 5000)
+
+          .execute ->
+            atom.workspace.getActivePane().splitRight()
+            atom.workspace.getPanes()[0].getItems().length
+          .then ({value}) -> expect(value).toBe 1
+          .execute -> atom.workspace.getPanes()[1].getItems().length
+          .then ({value}) -> expect(value).toBe 0
+          .execute -> atom.workspace.getPanes()[1].isActive()
+          .then ({value}) -> expect(value).toBe true
+
+          .startAnotherAtom([tempFilePath], ATOM_HOME: atomHome)
+
+          .execute -> atom.workspace.getPanes()[0].getItems().length
+          .then ({value}) -> expect(value).toBe 1
+          .execute -> atom.workspace.getPanes()[1].getItems().length
+          .then ({value}) -> expect(value).toBe 0
+          .execute -> atom.workspace.getPanes()[0].isActive()
+          .then ({value}) -> expect(value).toBe true
+
     it "reuses that window when opening files, but not when opening directories", ->
       tempFilePath = path.join(temp.mkdirSync("a-third-dir"), "a-file")
       fs.writeFileSync(tempFilePath, "This file was already here.")
