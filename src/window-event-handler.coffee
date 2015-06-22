@@ -29,7 +29,7 @@ class WindowEventHandler
                 atom.project.addPath(pathToOpen)
 
             unless fs.isDirectorySync(pathToOpen)
-              atom.workspace?.open(pathToOpen, {initialLine, initialColumn})
+              atom.workspace?.open(pathToOpen, {initialLine, initialColumn, searchAllPanes: true})
 
           return
 
