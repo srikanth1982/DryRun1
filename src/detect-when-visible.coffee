@@ -1,3 +1,4 @@
+_ = require 'underscore-plus'
 {Disposable} = require 'event-kit'
 
 detectWhenVisible = (element, callback) ->
@@ -13,6 +14,8 @@ checkVisibility = ->
     if element.offsetParent?
       observedElements.delete(element)
       callback()
+
+checkVisibility = _.debounce(checkVisibility, 200, true)
 
 mutationObserver = new MutationObserver(checkVisibility)
 observedElements = new Map
