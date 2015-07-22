@@ -10,7 +10,7 @@ detectWhenVisible = (element, callback) ->
 
 checkVisibility = ->
   observedElements.forEach (callback, element) ->
-    if element.offsetHeight > 0 or element.offsetWidth > 0
+    if element.offsetParent?
       observedElements.delete(element)
       callback()
 

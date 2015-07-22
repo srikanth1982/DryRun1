@@ -268,7 +268,7 @@ class TextEditorComponent
       @resizeDetector.contentDocument.defaultView.addEventListener 'resize', => @measureDimensions()
 
   detectWhenNextVisible: ->
-    detectWhenVisible(@hostElement, @becameVisible.bind(this))
+    detectWhenVisible(@domNode, @becameVisible.bind(this))
 
   # Listen for selection changes and store the currently selected text
   # in the selection clipboard. This is only applicable on Linux.
@@ -588,7 +588,7 @@ class TextEditorComponent
     window.addEventListener('mouseup', onMouseUp)
 
   isVisible: ->
-    @domNode.offsetHeight > 0 or @domNode.offsetWidth > 0
+    @domNode.offsetParent?
 
   pollDOM: =>
     @sampleBackgroundColors()
