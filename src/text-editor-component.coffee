@@ -89,6 +89,7 @@ class TextEditorComponent
 
     @observeEditor()
     @listenForDOMEvents()
+    @detectResize()
 
     @disposables.add @stylesElement.onDidAddStyleElement @onStylesheetsChanged
     @disposables.add @stylesElement.onDidUpdateStyleElement @onStylesheetsChanged
@@ -251,6 +252,15 @@ class TextEditorComponent
     @domNode.addEventListener 'compositionend', (event) =>
       @editor.insertText(selectedText, select: true, undo: 'skip')
       event.target.value = ''
+
+  detectResize: ->
+    @resizeDetector = document.createElement('object')
+    @resizeDetector.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; height: 100%; width: 100%; overflow: hidden; pointer-events: none; z-index: -1;')
+    @resizeDetector.type = 'text/html'
+    @resizeDetector.data = 'about:blank'
+    @domNode.appendChild(@resizeDetector)
+    @resizeDetector.onload = =>
+      @resizeDetector.contentDocument.defaultView.addEventListener 'resize', => @measureDimensions()
 
   # Listen for selection changes and store the currently selected text
   # in the selection clipboard. This is only applicable on Linux.
@@ -575,7 +585,6 @@ class TextEditorComponent
   pollDOM: =>
     unless @checkForVisibilityChange()
       @sampleBackgroundColors()
-      @measureDimensions()
       @sampleFontStyling()
       @overlayManager?.measureOverlays()
 
