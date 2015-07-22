@@ -102,7 +102,10 @@ class TextEditorComponent
     @disposables.add atom.views.pollDocument(@pollDOM)
 
     @updateSync()
-    @becameVisible() if @isVisible()
+    if @isVisible()
+      @becameVisible()
+    else
+      @detectWhenNextVisible()
 
   destroy: ->
     @mounted = false
