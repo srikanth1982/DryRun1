@@ -92,12 +92,11 @@ class TextEditorComponent
     @listenForDOMEvents()
     @detectResize()
 
-    @disposables.add @stylesElement.onDidAddStyleElement @onStylesheetsChanged
-    @disposables.add @stylesElement.onDidUpdateStyleElement @onStylesheetsChanged
-    @disposables.add @stylesElement.onDidRemoveStyleElement @onStylesheetsChanged
-    unless atom.themes.isInitialLoadComplete()
-      @disposables.add atom.themes.onDidChangeActiveThemes @onAllThemesLoaded
-    @disposables.add scrollbarStyle.onDidChangePreferredScrollbarStyle @refreshScrollbars
+    stylesDidChange = _.debounce(@stylesDidChange, 100).bind(this)
+    @disposables.add atom.styles.onDidAddStyleElement(stylesDidChange)
+    @disposables.add atom.styles.onDidRemoveStyleElement(stylesDidChange)
+    @disposables.add atom.styles.onDidUpdateStyleElement(stylesDidChange)
+    @disposables.add scrollbarStyle.onDidChangePreferredScrollbarStyle(@refreshScrollbars)
 
     @disposables.add atom.views.pollDocument(@pollDOM)
 
@@ -177,8 +176,6 @@ class TextEditorComponent
   becameVisible: ->
     @updatesPaused = true
     @measureScrollbars() if @measureScrollbarsWhenShown
-    @sampleFontStyling()
-    @sampleBackgroundColors()
     @measureWindowSize()
     @measureDimensions()
     @measureLineHeightAndDefaultCharWidth() if @measureLineHeightAndDefaultCharWidthWhenShown
@@ -496,31 +493,14 @@ class TextEditorComponent
       else
         @editor.setSelectedBufferRange([tailBufferPosition, [dragBufferRow + 1, 0]], preserveFolds: true)
 
-
-  onStylesheetsChanged: (styleElement) =>
-    return unless @performedInitialMeasurement
+  stylesDidChange: (styleElement) =>
+    return unless @mounted
     return unless atom.themes.isInitialLoadComplete()
 
-    # This delay prevents the styling from going haywire when stylesheets are
-    # reloaded in dev mode. It seems like a workaround for a browser bug, but
-    # not totally sure.
-
-    unless @stylingChangeAnimationFrameRequested
-      @stylingChangeAnimationFrameRequested = true
-      requestAnimationFrame =>
-        @stylingChangeAnimationFrameRequested = false
-        if @mounted
-          @refreshScrollbars() if not styleElement.sheet? or @containsScrollbarSelector(styleElement.sheet)
-          @handleStylingChange()
-
-  onAllThemesLoaded: =>
     @refreshScrollbars()
-    @handleStylingChange()
-
-  handleStylingChange: =>
     @sampleFontStyling()
     @sampleBackgroundColors()
-    @remeasureCharacterWidths()
+    @measureLineHeightAndDefaultCharWidth()
 
   onSelectionAdded: (selection) =>
     selectionDisposables = new CompositeDisposable
@@ -694,12 +674,6 @@ class TextEditorComponent
     @presenter.setHorizontalScrollbarHeight(height)
 
     cornerNode.style.display = originalDisplayValue
-
-  containsScrollbarSelector: (stylesheet) ->
-    for rule in stylesheet.cssRules
-      if rule.selectorText?.indexOf('scrollbar') > -1
-        return true
-    false
 
   refreshScrollbars: =>
     if @isVisible()
