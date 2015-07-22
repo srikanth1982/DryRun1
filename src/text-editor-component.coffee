@@ -264,6 +264,7 @@ class TextEditorComponent
     @resizeDetector.data = 'about:blank'
     @rootElement.appendChild(@resizeDetector)
     @resizeDetector.onload = =>
+      @measureDimensions()
       @resizeDetector.contentDocument.defaultView.addEventListener 'resize', => @measureDimensions()
 
   detectWhenNextVisible: ->
