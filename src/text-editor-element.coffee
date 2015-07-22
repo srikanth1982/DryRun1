@@ -46,6 +46,7 @@ class TextEditorElement extends HTMLElement
 
       @rootElement = document.createElement('div')
       @rootElement.classList.add('editor--private')
+      @rootElement.style.position = 'relative'
 
       @shadowRoot.appendChild(@stylesElement)
       @shadowRoot.appendChild(@rootElement)

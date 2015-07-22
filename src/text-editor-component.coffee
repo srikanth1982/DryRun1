@@ -262,7 +262,7 @@ class TextEditorComponent
     @resizeDetector.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; height: 100%; width: 100%; overflow: hidden; pointer-events: none; z-index: -1;')
     @resizeDetector.type = 'text/html'
     @resizeDetector.data = 'about:blank'
-    @domNode.appendChild(@resizeDetector)
+    @rootElement.appendChild(@resizeDetector)
     @resizeDetector.onload = =>
       @resizeDetector.contentDocument.defaultView.addEventListener 'resize', => @measureDimensions()
 
