@@ -12,6 +12,7 @@ LinesComponent = require './lines-component'
 ScrollbarComponent = require './scrollbar-component'
 ScrollbarCornerComponent = require './scrollbar-corner-component'
 OverlayManager = require './overlay-manager'
+detectWhenVisible = require './detect-when-visible'
 
 module.exports =
 class TextEditorComponent
@@ -101,7 +102,7 @@ class TextEditorComponent
     @disposables.add atom.views.pollDocument(@pollDOM)
 
     @updateSync()
-    @checkForVisibilityChange()
+    @becameVisible() if @isVisible()
 
   destroy: ->
     @mounted = false
@@ -261,6 +262,9 @@ class TextEditorComponent
     @domNode.appendChild(@resizeDetector)
     @resizeDetector.onload = =>
       @resizeDetector.contentDocument.defaultView.addEventListener 'resize', => @measureDimensions()
+
+  detectWhenNextVisible: ->
+    detectWhenVisible(@hostElement, @becameVisible.bind(this))
 
   # Listen for selection changes and store the currently selected text
   # in the selection clipboard. This is only applicable on Linux.
@@ -583,20 +587,9 @@ class TextEditorComponent
     @domNode.offsetHeight > 0 or @domNode.offsetWidth > 0
 
   pollDOM: =>
-    unless @checkForVisibilityChange()
-      @sampleBackgroundColors()
-      @sampleFontStyling()
-      @overlayManager?.measureOverlays()
-
-  checkForVisibilityChange: ->
-    if @isVisible()
-      if @wasVisible
-        false
-      else
-        @becameVisible()
-        @wasVisible = true
-    else
-      @wasVisible = false
+    @sampleBackgroundColors()
+    @sampleFontStyling()
+    @overlayManager?.measureOverlays()
 
   requestHeightAndWidthMeasurement: =>
     return if @heightAndWidthMeasurementRequested
@@ -672,6 +665,7 @@ class TextEditorComponent
       @linesComponent.measureLineHeightAndDefaultCharWidth()
     else
       @measureLineHeightAndDefaultCharWidthWhenShown = true
+      @detectWhenNextVisible()
 
   remeasureCharacterWidths: ->
     if @isVisible()
@@ -679,6 +673,7 @@ class TextEditorComponent
       @linesComponent.remeasureCharacterWidths()
     else
       @remeasureCharacterWidthsWhenShown = true
+      @detectWhenNextVisible()
 
   measureScrollbars: ->
     @measureScrollbarsWhenShown = false
@@ -707,6 +702,7 @@ class TextEditorComponent
       @measureScrollbarsWhenShown = false
     else
       @measureScrollbarsWhenShown = true
+      @detectWhenNextVisible()
       return
 
     verticalNode = @verticalScrollbarComponent.getDomNode()

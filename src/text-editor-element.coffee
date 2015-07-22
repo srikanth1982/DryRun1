@@ -64,7 +64,7 @@ class TextEditorElement extends HTMLElement
     @buildModel() unless @getModel()?
     atom.assert(@model.isAlive(), "Attaching a view for a destroyed editor")
     @mountComponent() unless @component?
-    @component.checkForVisibilityChange()
+    @component.becameVisible() if @component.isVisible()
     if this is document.activeElement
       @focused()
     @emitter.emit("did-attach")
