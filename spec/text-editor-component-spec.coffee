@@ -2600,9 +2600,11 @@ describe "TextEditorComponent", ->
         expect(componentNode.querySelectorAll('.line').length).toBe 0
 
         hiddenParent.style.display = 'block'
-        advanceClock(atom.views.documentPollingInterval)
 
-        expect(componentNode.querySelectorAll('.line').length).toBeGreaterThan 0
+        waits 1 # wait for visibility to be detected
+
+        runs ->
+          expect(componentNode.querySelectorAll('.line').length).toBeGreaterThan 0
 
     describe "when the lineHeight changes while the editor is hidden", ->
       it "does not attempt to measure the lineHeightInPixels until the editor becomes visible again", ->
@@ -2710,25 +2712,31 @@ describe "TextEditorComponent", ->
       expect(parseInt(newHeight)).toBeLessThan wrapperNode.offsetHeight
       wrapperNode.style.height = newHeight
 
-      advanceClock(atom.views.documentPollingInterval)
-      nextAnimationFrame()
-      expect(componentNode.querySelectorAll('.line')).toHaveLength(6)
+      waits 100 # wait for resize to be detected
 
-      gutterWidth = componentNode.querySelector('.gutter').offsetWidth
-      componentNode.style.width = gutterWidth + 14 * charWidth + editor.getVerticalScrollbarWidth() + 'px'
-      advanceClock(atom.views.documentPollingInterval)
-      nextAnimationFrame()
-      expect(componentNode.querySelector('.line').textContent).toBe "var quicksort "
+      runs ->
+        nextAnimationFrame()
+        expect(componentNode.querySelectorAll('.line')).toHaveLength(6)
+
+        gutterWidth = componentNode.querySelector('.gutter').offsetWidth
+        wrapperNode.style.width = gutterWidth + 14 * charWidth + editor.getVerticalScrollbarWidth() + 'px'
+
+      waits 100 # wait for resize to be detected
+
+      runs ->
+        nextAnimationFrame()
+        expect(componentNode.querySelector('.line').textContent).toBe "var quicksort "
 
     it "accounts for the scroll view's padding when determining the wrap location", ->
       scrollViewNode = componentNode.querySelector('.scroll-view')
       scrollViewNode.style.paddingLeft = 20 + 'px'
-      componentNode.style.width = 30 * charWidth + 'px'
+      wrapperNode.style.width = 30 * charWidth + 'px'
 
-      advanceClock(atom.views.documentPollingInterval)
-      nextAnimationFrame()
+      waits 100 # wait for resize to be detected
 
-      expect(component.lineNodeForScreenRow(0).textContent).toBe "var quicksort = "
+      runs ->
+        nextAnimationFrame()
+        expect(component.lineNodeForScreenRow(0).textContent).toBe "var quicksort = "
 
   describe "default decorations", ->
     it "applies .cursor-line decorations for line numbers overlapping selections", ->

@@ -232,11 +232,10 @@ class TextEditorView extends View
 
   show: ->
     super
-    @component?.checkForVisibilityChange()
+    @component?.becameVisible() if @component?.isVisible()
 
   hide: ->
     super
-    @component?.checkForVisibilityChange()
 
   pageDown: ->
     deprecate('Use editorView.getModel().pageDown()')
