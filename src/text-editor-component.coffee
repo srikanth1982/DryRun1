@@ -20,6 +20,7 @@ class TextEditorComponent
   cursorBlinkPeriod: 800
   cursorBlinkResumeDelay: 100
   tileSize: 12
+  styleUpdateDelay: 100
 
   pendingScrollTop: null
   pendingScrollLeft: null
@@ -91,16 +92,12 @@ class TextEditorComponent
     @observeEditor()
     @listenForDOMEvents()
     @detectResize()
-
-    stylesDidChange = _.debounce(@stylesDidChange, 100).bind(this)
-    @disposables.add atom.styles.onDidAddStyleElement(stylesDidChange)
-    @disposables.add atom.styles.onDidRemoveStyleElement(stylesDidChange)
-    @disposables.add atom.styles.onDidUpdateStyleElement(stylesDidChange)
-    @disposables.add scrollbarStyle.onDidChangePreferredScrollbarStyle(@refreshScrollbars)
+    @observeStyles()
 
     @disposables.add atom.views.pollDocument(@pollDOM)
 
     @updateSync()
+
     if @isVisible()
       @becameVisible()
     else
@@ -175,9 +172,11 @@ class TextEditorComponent
 
   becameVisible: ->
     @updatesPaused = true
-    @measureScrollbars() if @measureScrollbarsWhenShown
     @measureWindowSize()
     @measureDimensions()
+    @sampleFontStyling()
+    @sampleBackgroundColors()
+    @measureScrollbars() if @measureScrollbarsWhenShown
     @measureLineHeightAndDefaultCharWidth() if @measureLineHeightAndDefaultCharWidthWhenShown
     @remeasureCharacterWidths() if @remeasureCharacterWidthsWhenShown
     @editor.setVisible(true)
@@ -266,6 +265,13 @@ class TextEditorComponent
 
   detectWhenNextVisible: ->
     detectWhenVisible(@domNode, @becameVisible.bind(this))
+
+  observeStyles: ->
+    stylesDidChange = _.debounce(@stylesDidChange, @styleUpdateDelay).bind(this)
+    @disposables.add atom.styles.onDidAddStyleElement(stylesDidChange)
+    @disposables.add atom.styles.onDidRemoveStyleElement(stylesDidChange)
+    @disposables.add atom.styles.onDidUpdateStyleElement(stylesDidChange)
+    @disposables.add scrollbarStyle.onDidChangePreferredScrollbarStyle(@refreshScrollbars)
 
   # Listen for selection changes and store the currently selected text
   # in the selection clipboard. This is only applicable on Linux.

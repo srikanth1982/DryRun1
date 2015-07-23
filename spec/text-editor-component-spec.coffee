@@ -279,9 +279,14 @@ describe "TextEditorComponent", ->
       for tileNode in linesNode.querySelectorAll(".tile")
         expect(tileNode.style.backgroundColor).toBe(backgroundColor)
 
-      wrapperNode.style.backgroundColor = 'rgb(255, 0, 0)'
+      atom.styles.addStyleSheet """
+        atom-text-editor {
+          background-color: rgb(255, 0, 0) !important;
+        }
+      """
 
-      advanceClock(atom.views.documentPollingInterval)
+      advanceClock(component.styleUpdateDelay)
+
       nextAnimationFrame()
       expect(linesNode.style.backgroundColor).toBe 'rgb(255, 0, 0)'
       for tileNode in linesNode.querySelectorAll(".tile")
@@ -916,6 +921,8 @@ describe "TextEditorComponent", ->
       expect(cursorRect.width).toBe rangeRect.width
 
     it "positions cursors correctly after character widths are changed via a stylesheet change", ->
+      jasmine.useRealClock()
+
       atom.config.set('editor.fontFamily', 'sans-serif')
       editor.setCursorScreenPosition([0, 16])
       nextAnimationFrame()
@@ -925,21 +932,25 @@ describe "TextEditorComponent", ->
           font-weight: bold;
         }
       """, context: 'atom-text-editor'
-      nextAnimationFrame() # update based on new measurements
 
-      cursor = componentNode.querySelector('.cursor')
-      cursorRect = cursor.getBoundingClientRect()
+      waits component.styleUpdateDelay
 
-      cursorLocationTextNode = component.lineNodeForScreenRow(0).querySelector('.storage.type.function.js').firstChild
-      range = document.createRange()
-      range.setStart(cursorLocationTextNode, 0)
-      range.setEnd(cursorLocationTextNode, 1)
-      rangeRect = range.getBoundingClientRect()
+      runs ->
+        nextAnimationFrame() # update based on new measurements
 
-      expect(cursorRect.left).toBe rangeRect.left
-      expect(cursorRect.width).toBe rangeRect.width
+        cursor = componentNode.querySelector('.cursor')
+        cursorRect = cursor.getBoundingClientRect()
 
-      atom.themes.removeStylesheet('test')
+        cursorLocationTextNode = component.lineNodeForScreenRow(0).querySelector('.storage.type.function.js').firstChild
+        range = document.createRange()
+        range.setStart(cursorLocationTextNode, 0)
+        range.setEnd(cursorLocationTextNode, 1)
+        rangeRect = range.getBoundingClientRect()
+
+        expect(cursorRect.left).toBe rangeRect.left
+        expect(cursorRect.width).toBe rangeRect.width
+
+        atom.themes.removeStylesheet('test')
 
     it "sets the cursor to the default character width at the end of a line", ->
       editor.setCursorScreenPosition([0, Infinity])
@@ -2601,9 +2612,10 @@ describe "TextEditorComponent", ->
 
         hiddenParent.style.display = 'block'
 
-        waits 1 # wait for visibility to be detected
+        waits 1 # wait for mutation observer to kick off visibility detection
 
         runs ->
+          advanceClock(200) # pass through visibility detection debounce period
           expect(componentNode.querySelectorAll('.line').length).toBeGreaterThan 0
 
     describe "when the lineHeight changes while the editor is hidden", ->
