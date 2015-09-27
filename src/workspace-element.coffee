@@ -144,7 +144,8 @@ atom.commands.add 'atom-workspace',
   'window:log-deprecation-warnings': -> Grim.logDeprecations()
   'window:toggle-auto-indent': -> atom.config.set("editor.autoIndent", not atom.config.get("editor.autoIndent"))
   'pane:reopen-closed-item': -> @getModel().reopenItem()
-  'core:close': -> @getModel().destroyActivePaneItemOrEmptyPane()
+  'core:close-pane-item': -> @getModel().destroyActivePaneItemOrEmptyPane()
+  'core:close': -> @getModel().destroyActivePaneItemOrEmptyPaneAndWindow()
   'core:save': -> @getModel().saveActivePaneItem()
   'core:save-as': -> @getModel().saveActivePaneItemAs()
 

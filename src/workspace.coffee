@@ -615,6 +615,17 @@ class Workspace extends Model
   destroyActivePaneItemOrEmptyPane: ->
     if @getActivePaneItem()? then @destroyActivePaneItem() else @destroyActivePane()
 
+  # Destroy the active pane item or the active pane if it is empty, and close
+  # the window if this was the last pane
+  destroyActivePaneItemOrEmptyPaneAndWindow: ->
+    if atom.config.get('core.closeWindowAfterLastItem') is 'After the last item' and @getPanes().length is 1 and @getPaneItems().length is 0
+      atom.close()
+
+    @destroyActivePaneItemOrEmptyPane()
+
+    if atom.config.get('core.closeWindowAfterLastItem') is 'Together with the last item' and @getPanes().length is 1 and @getPaneItems().length is 0
+      atom.close()
+
   # Increase the editor font size by 1px.
   increaseFontSize: ->
     atom.config.set("editor.fontSize", atom.config.get("editor.fontSize") + 1)

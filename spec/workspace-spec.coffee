@@ -1355,3 +1355,101 @@ describe "Workspace", ->
 
       atom.workspace.destroyActivePaneItemOrEmptyPane()
       expect(atom.workspace.getPanes().length).toBe 1
+
+  describe "::destroyActivePaneItemOrEmptyPaneAndWindow", ->
+    beforeEach ->
+      atom.config.set('core.destroyEmptyPanes', false)
+      spyOn(atom, 'close')
+      waitsForPromise ->
+        atom.workspace.open()
+
+    describe "when core.closeWindowAfterLastItem is 'Disabled'", ->
+      it "closes pane items and empty panes, but doesn't close the window", ->
+        atom.config.set('core.closeWindowAfterLastItem', 'Disabled')
+
+        pane1 = atom.workspace.getActivePane()
+        pane2 = pane1.splitRight(copyActiveItem: true)
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 1
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 0
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(pane1.getItems().length).toBe 1
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(pane1.getItems().length).toBe 0
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(atom.close).not.toHaveBeenCalled()
+
+    describe "when core.closeWindowAfterLastItem is 'Together with the last item'", ->
+      it "closes pane items and empty panes, and closes the window with the last item", ->
+        atom.config.set('core.closeWindowAfterLastItem', 'Together with the last item')
+
+        pane1 = atom.workspace.getActivePane()
+        pane2 = pane1.splitRight(copyActiveItem: true)
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 1
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 0
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(pane1.getItems().length).toBe 1
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.close).toHaveBeenCalled()
+
+    describe "when core.closeWindowAfterLastItem is 'After the last item'", ->
+      it "closes pane items and empty panes, and closes the window after the last item", ->
+        atom.config.set('core.closeWindowAfterLastItem', 'After the last item')
+
+        pane1 = atom.workspace.getActivePane()
+        pane2 = pane1.splitRight(copyActiveItem: true)
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 1
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(pane2.getItems().length).toBe 0
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(pane1.getItems().length).toBe 1
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.workspace.getPanes().length).toBe 1
+        expect(pane1.getItems().length).toBe 0
+        expect(atom.close).not.toHaveBeenCalled()
+
+        atom.workspace.destroyActivePaneItemOrEmptyPaneAndWindow()
+
+        expect(atom.close).toHaveBeenCalled()

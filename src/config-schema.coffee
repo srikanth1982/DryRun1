@@ -93,6 +93,15 @@ module.exports =
         description: 'Automatically opens an empty editor when atom starts.'
         type: 'boolean'
         default: true
+      closeWindowAfterLastItem:
+        description: 'Automatically closes the window together with the last item, or after core:close is called with no items open.'
+        type: 'string'
+        default: 'Disabled'
+        enum: [
+          'Disabled',
+          'Together with the last item',
+          'After the last item'
+        ]
 
   editor:
     type: 'object'
