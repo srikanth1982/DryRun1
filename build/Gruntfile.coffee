@@ -250,6 +250,7 @@ module.exports = (grunt) ->
 
     'create-windows-installer':
       installer:
+        exe: 'atom.exe'
         appDirectory: shellAppDir
         outputDirectory: path.join(buildDir, 'installer')
         authors: 'GitHub Inc.'
