@@ -79,7 +79,7 @@ getAssets = ->
       ]
     when 'win32'
       assets = [{assetName: 'atom-windows.zip', sourcePath: appName}]
-      for squirrelAsset in ['AtomSetup.exe', 'RELEASES', "atom-#{version}-full.nupkg", "atom-#{version}-delta.nupkg"]
+      for squirrelAsset in ["#{appName}Setup.exe", 'RELEASES', "atom-#{version}-full.nupkg", "atom-#{version}-delta.nupkg"]
         cp path.join(buildDir, 'installer', squirrelAsset), path.join(buildDir, squirrelAsset)
         assets.push({assetName: squirrelAsset, sourcePath: assetName})
       assets

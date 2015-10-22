@@ -14,10 +14,11 @@ module.exports = (grunt) ->
         updateExePath = path.resolve(__dirname, '..', 'node_modules', 'grunt-electron-installer', 'vendor', 'Update.exe')
         spawn {cmd, args: [updateExePath]}, (error) -> done(error)
 
-  grunt.registerTask 'codesign:installer', 'Codesign AtomSetup.exe', ->
+  grunt.registerTask 'codesign:installer', 'Codesign Installer', ->
     done = @async()
     cmd = process.env.JANKY_SIGNTOOL ? 'signtool'
-    atomSetupExePath = path.resolve(grunt.config.get('atom.buildDir'), 'installer', 'AtomSetup.exe')
+    appName = grunt.config.get('atom.appName')
+    atomSetupExePath = path.resolve(grunt.config.get('atom.buildDir'), 'installer', "#{appName}Setup.exe")
     spawn {cmd, args: [atomSetupExePath]}, (error) -> done(error)
 
   grunt.registerTask 'codesign:app', 'Codesign Atom.app', ->
