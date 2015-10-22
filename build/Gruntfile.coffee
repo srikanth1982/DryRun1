@@ -250,6 +250,7 @@ module.exports = (grunt) ->
 
     'create-windows-installer':
       installer:
+        name: appFileName.replace('-', '_')
         exe: 'atom.exe'
         appDirectory: shellAppDir
         outputDirectory: path.join(buildDir, 'installer')
@@ -257,7 +258,10 @@ module.exports = (grunt) ->
         loadingGif: path.resolve(__dirname, '..', 'resources', 'win', 'loading.gif')
         iconUrl: "https://raw.githubusercontent.com/atom/atom/master/resources/app-icons/#{channel}/atom.ico"
         setupIcon: path.resolve(__dirname, '..', 'resources', 'app-icons', channel, 'atom.ico')
-        remoteReleases: 'https://atom.io/api/updates'
+
+        # Don't sync releases on beta until 1.1.0-beta2 is out, which has the
+        # correct name (atom_beta, instead of atom).
+        remoteReleases: ("https://atom.io/api/updates?version=#{version}" unless channel is 'beta')
 
     shell:
       'kill-atom':

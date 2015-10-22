@@ -79,7 +79,12 @@ getAssets = ->
       ]
     when 'win32'
       assets = [{assetName: 'atom-windows.zip', sourcePath: appName}]
-      for squirrelAsset in ["#{appName}Setup.exe", 'RELEASES', "#{appFileName}-#{version}-full.nupkg", "#{appFileName}-#{version}-delta.nupkg"]
+      nupkgName = grunt.config('create-windows-installer.installer').name
+      for squirrelAsset in ["#{appName}Setup.exe", 'RELEASES', "#{nupkgName}-#{version}-full.nupkg", "#{nupkgName}-#{version}-delta.nupkg"]
+
+        # TODO: remove this once there is a prior beta release with the right name.
+        continue if grunt.config.get('atom.channel') is 'beta' and squirrelAsset is "#{nupkgName}-#{version}-delta.nupkg"
+
         cp path.join(buildDir, 'installer', squirrelAsset), path.join(buildDir, squirrelAsset)
         assets.push({assetName: squirrelAsset, sourcePath: assetName})
       assets
