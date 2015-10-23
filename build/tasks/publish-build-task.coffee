@@ -85,8 +85,10 @@ getAssets = ->
         # TODO: remove this once there is a prior beta release with the right name.
         continue if grunt.config.get('atom.channel') is 'beta' and squirrelAsset is "#{nupkgName}-#{version}-delta.nupkg"
 
-        cp path.join(buildDir, 'installer', squirrelAsset), path.join(buildDir, squirrelAsset)
-        assets.push({assetName: squirrelAsset, sourcePath: assetName})
+        assetName = squirrelAsset.replace(/\s+/g, '')
+        sourcePath = path.join(buildDir, 'installer', squirrelAsset)
+        cp sourcePath, path.join(buildDir, assetName)
+        assets.push({assetName, sourcePath})
       assets
     when 'linux'
       if process.arch is 'ia32'
