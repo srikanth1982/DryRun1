@@ -111,6 +111,9 @@ class AtomEnvironment extends Model
   # Public: A {Workspace} instance
   workspace: null
 
+  # Public: An {Update} instance
+  update: null
+
   saveStateDebounceInterval: 1000
 
   ###
