@@ -40,6 +40,7 @@ Project = require './project'
 TextEditor = require './text-editor'
 TextBuffer = require 'text-buffer'
 Gutter = require './gutter'
+Update = require './update'
 
 WorkspaceElement = require './workspace-element'
 PanelContainerElement = require './panel-container-element'
@@ -185,6 +186,8 @@ class AtomEnvironment extends Model
       notificationManager: @notifications, @applicationDelegate, @clipboard, viewRegistry: @views, assert: @assert.bind(this)
     })
     @themes.workspace = @workspace
+
+    @update = new Update()
 
     @config.load()
 
