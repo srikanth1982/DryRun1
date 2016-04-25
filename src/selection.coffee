@@ -25,12 +25,6 @@ class Selection extends Model
 
   subscribeToMarkerEvents: ->
     unless @subscribedToMarkerEvents
-      Grim ?= require 'grim'
-      Grim.deprecate("""
-      Subscribing to individual selection/cursor events is deprecated and will be removed soon.
-      Please, consider using `TextEditor.prototype.onDidUpdateSelections` and
-      `TextEditor.prototype.onDidUpdateCursors` instead.
-      """)
       @subscribedToMarkerEvents = true
       @marker.onDidChange (e) => @markerDidChange(e)
       @marker.onDidDestroy => @markerDidDestroy()
@@ -57,6 +51,11 @@ class Selection extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeRange: (callback) ->
+    Grim ?= require 'grim'
+    Grim.deprecate("""
+    Subscribing to individual selection events is deprecated.
+    Please, consider using `TextEditor.prototype.onDidUpdateSelections` instead.
+    """)
     @subscribeToMarkerEvents()
     @emitter.on 'did-change-range', callback
 
@@ -66,6 +65,11 @@ class Selection extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidDestroy: (callback) ->
+    Grim ?= require 'grim'
+    Grim.deprecate("""
+    Subscribing to individual selection events is deprecated.
+    Please, consider using `TextEditor.prototype.onDidUpdateSelections` instead.
+    """)
     @subscribeToMarkerEvents()
     @emitter.on 'did-destroy', callback
 

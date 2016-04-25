@@ -2,6 +2,7 @@
 {Emitter} = require 'event-kit'
 _ = require 'underscore-plus'
 Model = require './model'
+Grim = null
 
 EmptyLineRegExp = /(\r\n[\t ]*\r\n)|(\n[\t ]*\n)/g
 
@@ -42,6 +43,11 @@ class Cursor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangePosition: (callback) ->
+    Grim ?= require 'grim'
+    Grim.deprecate("""
+    Subscribing to individual cursor events is deprecated.
+    Please, consider using `TextEditor.prototype.onDidUpdateCursors` instead.
+    """)
     @selection.subscribeToMarkerEvents()
     @emitter.on 'did-change-position', callback
 
@@ -51,6 +57,11 @@ class Cursor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidDestroy: (callback) ->
+    Grim ?= require 'grim'
+    Grim.deprecate("""
+    Subscribing to individual cursor events is deprecated.
+    Please, consider using `TextEditor.prototype.onDidUpdateCursors` instead.
+    """)
     @selection.subscribeToMarkerEvents()
     @emitter.on 'did-destroy', callback
 
