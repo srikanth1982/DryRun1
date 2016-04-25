@@ -138,8 +138,8 @@ class TextEditor extends Model
     @emitter = new Emitter
     @disposables = new CompositeDisposable
     @cursors = []
-    @cursorsByMarkerId = new Map
-    @selectionsByMarkerId = new Map
+    @cursorsByMarkerId = {}
+    @selectionsByMarkerId = {}
     @cursorsWithChangedVisibility = new Set
     @selections = []
     @subscribeToSelectionMarkerEvents = false
@@ -2141,7 +2141,7 @@ class TextEditor extends Model
   cursorsForScreenRowRange: (startScreenRow, endScreenRow) ->
     cursors = []
     for marker in @selectionsMarkerLayer.findMarkers(intersectsScreenRowRange: [startScreenRow, endScreenRow])
-      if cursor = @cursorsByMarkerId.get(marker.id)
+      if cursor = @cursorsByMarkerId[marker.id]
         cursors.push(cursor)
     cursors
 
@@ -2149,7 +2149,7 @@ class TextEditor extends Model
   addCursor: (marker) ->
     cursor = new Cursor(editor: this, marker: marker, config: @config)
     @cursors.push(cursor)
-    @cursorsByMarkerId.set(marker.id, cursor)
+    @cursorsByMarkerId[marker.id] = cursor
     @decorateMarker(marker, type: 'line-number', class: 'cursor-line')
     @decorateMarker(marker, type: 'line-number', class: 'cursor-line-no-selection', onlyHead: true, onlyEmpty: true)
     @decorateMarker(marker, type: 'line', class: 'cursor-line', onlyEmpty: true)
@@ -2175,20 +2175,20 @@ class TextEditor extends Model
     updatedSelections = new Set
     updatedCursors = new Set
     updated.forEach (id) =>
-      selection = @selectionsByMarkerId.get(id)
+      selection = @selectionsByMarkerId[id]
       cursor = selection.cursor
       cursor.goalColumn = null
       updatedSelections.add(selection)
       updatedCursors.add(cursor)
 
     @cursorsWithChangedVisibility.forEach (id) =>
-      updatedCursors.add(@cursorsByMarkerId.get(id))
+      updatedCursors.add(@cursorsByMarkerId[id])
     @cursorsWithChangedVisibility = new Set
 
     touchedSelections = new Set
     touchedCursors = new Set
     touched.forEach (id) =>
-      selection = @selectionsByMarkerId.get(id)
+      selection = @selectionsByMarkerId[id]
       cursor = selection.cursor
       cursor.goalColumn = null
       touchedSelections.add(selection)
@@ -2197,7 +2197,7 @@ class TextEditor extends Model
     destroyedSelections = new Set
     destroyedCursors = new Set
     destroyed.forEach (id) =>
-      selection = @selectionsByMarkerId.get(id)
+      selection = @selectionsByMarkerId[id]
       cursor = selection.cursor
       destroyedSelections.add(selection)
       destroyedCursors.add(cursor)
@@ -2214,7 +2214,7 @@ class TextEditor extends Model
 
   didUpdateCursorVisibility: (id) ->
     if @buffer.transactCallDepth is 0
-      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId.get(id)]), touched: new Set, destroyed: new Set}
+      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId[id]]), touched: new Set, destroyed: new Set}
     else
       @cursorsWithChangedVisibility.add(id)
 
@@ -2688,7 +2688,7 @@ class TextEditor extends Model
   addSelection: (marker, options={}) ->
     cursor = @addCursor(marker)
     selection = new Selection(_.extend({editor: this, marker, cursor, @clipboard}, options))
-    @selectionsByMarkerId.set(marker.id, selection)
+    @selectionsByMarkerId[marker.id] = selection
     if @subscribeToSelectionMarkerEvents
       selection.subscribeToMarkerEvents()
     @selections.push(selection)
@@ -2709,8 +2709,8 @@ class TextEditor extends Model
     selection.cursor.destroyed = true
     _.remove(@cursors, selection.cursor)
     _.remove(@selections, selection)
-    @cursorsByMarkerId.delete(selection.cursor.marker.id)
-    @selectionsByMarkerId.delete(selection.cursor.marker.id)
+    delete @cursorsByMarkerId[selection.cursor.marker.id]
+    delete @selectionsByMarkerId[selection.marker.id]
     @emitter.emit 'did-remove-cursor', selection.cursor
     @emitter.emit 'did-remove-selection', selection
 
