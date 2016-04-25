@@ -237,7 +237,7 @@ class Cursor extends Model
       {row, column} = @getScreenPosition()
 
     column = @goalColumn if @goalColumn?
-    @setScreenPosition({row: row - rowCount, column: column}, skipSoftWrapIndentation: true)
+    @setScreenPosition({row: row - rowCount, column: column}, skipSoftWrapIndentation: true, retainGoalColumn: true)
     @goalColumn = column
 
   # Public: Moves the cursor down one screen row.
@@ -254,7 +254,7 @@ class Cursor extends Model
       {row, column} = @getScreenPosition()
 
     column = @goalColumn if @goalColumn?
-    @setScreenPosition({row: row + rowCount, column: column}, skipSoftWrapIndentation: true)
+    @setScreenPosition({row: row + rowCount, column: column}, skipSoftWrapIndentation: true, retainGoalColumn: true)
     @goalColumn = column
 
   # Public: Moves the cursor left one screen column.
@@ -661,6 +661,7 @@ class Cursor extends Model
   ###
 
   changePosition: (options, fn) ->
+    @goalColumn = null unless options.retainGoalColumn
     @clearSelection(autoscroll: false)
     fn()
     @autoscroll() if options.autoscroll ? @isLastCursor()
