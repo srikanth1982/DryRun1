@@ -42,6 +42,7 @@ class Cursor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangePosition: (callback) ->
+    @selection.subscribeToMarkerEvents()
     @emitter.on 'did-change-position', callback
 
   # Public: Calls your `callback` when the cursor is destroyed
@@ -50,6 +51,7 @@ class Cursor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidDestroy: (callback) ->
+    @selection.subscribeToMarkerEvents()
     @emitter.on 'did-destroy', callback
 
   # Public: Calls your `callback` when the cursor's visibility has changed
@@ -574,7 +576,7 @@ class Cursor extends Model
     if @visible?
       @visible
     else
-      @getBufferRange().isEmpty()
+      @marker.getBufferRange().isEmpty()
 
   ###
   Section: Comparing to another cursor

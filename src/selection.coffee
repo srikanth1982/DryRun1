@@ -2,6 +2,7 @@
 {pick} = _ = require 'underscore-plus'
 {Emitter} = require 'event-kit'
 Model = require './model'
+Grim = null
 
 NonWhitespaceRegExp = /\S/
 
@@ -20,9 +21,19 @@ class Selection extends Model
     @assignId(id)
     @cursor.selection = this
     @decoration = @editor.decorateMarker(@marker, type: 'highlight', class: 'selection')
+    @subscribedToMarkerEvents = false
 
-    @marker.onDidChange (e) => @markerDidChange(e)
-    @marker.onDidDestroy => @markerDidDestroy()
+  subscribeToMarkerEvents: ->
+    unless @subscribedToMarkerEvents
+      Grim ?= require 'grim'
+      Grim.deprecate("""
+      Subscribing to individual selection/cursor events is deprecated and will be removed soon.
+      Please, consider using `TextEditor.prototype.onDidUpdateSelections` and
+      `TextEditor.prototype.onDidUpdateCursors` instead.
+      """)
+      @subscribedToMarkerEvents = true
+      @marker.onDidChange (e) => @markerDidChange(e)
+      @marker.onDidDestroy => @markerDidDestroy()
 
   destroy: ->
     @marker.destroy()
@@ -46,6 +57,7 @@ class Selection extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeRange: (callback) ->
+    @subscribeToMarkerEvents()
     @emitter.on 'did-change-range', callback
 
   # Extended: Calls your `callback` when the selection was destroyed
@@ -54,6 +66,7 @@ class Selection extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidDestroy: (callback) ->
+    @subscribeToMarkerEvents()
     @emitter.on 'did-destroy', callback
 
   ###

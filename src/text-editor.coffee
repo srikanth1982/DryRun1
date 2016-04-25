@@ -140,6 +140,7 @@ class TextEditor extends Model
     @cursors = []
     @cursorsByMarkerId = new Map
     @selections = []
+    @subscribeToSelectionMarkerEvents = false
     @autoHeight ?= true
     @scrollPastEnd ?= true
     @hasTerminatedPendingState = false
@@ -338,6 +339,9 @@ class TextEditor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeCursorPosition: (callback) ->
+    for selection in @selections
+      selection.subscribeToMarkerEvents()
+    @subscribeToSelectionMarkerEvents = true
     @emitter.on 'did-change-cursor-position', callback
 
   # Essential: Calls your `callback` when a selection's screen range changes.
@@ -352,6 +356,9 @@ class TextEditor extends Model
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeSelectionRange: (callback) ->
+    for selection in @selections
+      selection.subscribeToMarkerEvents()
+    @subscribeToSelectionMarkerEvents = true
     @emitter.on 'did-change-selection-range', callback
 
   # Extended: Calls your `callback` when soft wrap was enabled or disabled.
@@ -2600,6 +2607,8 @@ class TextEditor extends Model
   addSelection: (marker, options={}) ->
     cursor = @addCursor(marker)
     selection = new Selection(_.extend({editor: this, marker, cursor, @clipboard}, options))
+    if @subscribeToSelectionMarkerEvents
+      selection.subscribeToMarkerEvents()
     @selections.push(selection)
     selectionBufferRange = selection.getBufferRange()
     @mergeIntersectingSelections(preserveFolds: options.preserveFolds)
