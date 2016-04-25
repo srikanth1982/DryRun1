@@ -807,11 +807,6 @@ class Selection extends Model
   markerDidDestroy: ->
     return if @editor.isDestroyed()
 
-    @destroyed = true
-    @cursor.destroyed = true
-
-    @editor.removeSelection(this)
-
     @cursor.emitter.emit 'did-destroy'
     @emitter.emit 'did-destroy'
 

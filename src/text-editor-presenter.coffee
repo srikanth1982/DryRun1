@@ -150,6 +150,10 @@ class TextEditorPresenter
       @shouldUpdateDecorations = true
       @emitDidUpdateState()
 
+    @disposables.add @model.onDidUpdateCursors =>
+      @pauseCursorBlinking()
+      @emitDidUpdateState()
+
     @disposables.add @model.onDidAddDecoration(@didAddBlockDecoration.bind(this))
 
     for decoration in @model.getDecorations({type: 'block'})
@@ -163,10 +167,8 @@ class TextEditorPresenter
 
     @disposables.add @model.onDidChangeLineNumberGutterVisible(@emitDidUpdateState.bind(this))
 
-    @disposables.add @model.onDidAddCursor(@didAddCursor.bind(this))
     @disposables.add @model.onDidRequestAutoscroll(@requestAutoscroll.bind(this))
     @disposables.add @model.onDidChangeFirstVisibleScreenRow(@didChangeFirstVisibleScreenRow.bind(this))
-    @observeCursor(cursor) for cursor in @model.getCursors()
     @disposables.add @model.onDidAddGutter(@didAddGutter.bind(this))
     return
 
@@ -1379,33 +1381,6 @@ class TextEditorPresenter
     @observedBlockDecorations.delete(decoration)
     @invalidatedDimensionsByBlockDecoration.delete(decoration)
     @shouldUpdateDecorations = true
-    @emitDidUpdateState()
-
-  observeCursor: (cursor) ->
-    didChangePositionDisposable = cursor.onDidChangePosition =>
-      @pauseCursorBlinking()
-
-      @emitDidUpdateState()
-
-    didChangeVisibilityDisposable = cursor.onDidChangeVisibility =>
-
-      @emitDidUpdateState()
-
-    didDestroyDisposable = cursor.onDidDestroy =>
-      @disposables.remove(didChangePositionDisposable)
-      @disposables.remove(didChangeVisibilityDisposable)
-      @disposables.remove(didDestroyDisposable)
-
-      @emitDidUpdateState()
-
-    @disposables.add(didChangePositionDisposable)
-    @disposables.add(didChangeVisibilityDisposable)
-    @disposables.add(didDestroyDisposable)
-
-  didAddCursor: (cursor) ->
-    @observeCursor(cursor)
-    @pauseCursorBlinking()
-
     @emitDidUpdateState()
 
   startBlinkingCursors: ->

@@ -139,6 +139,8 @@ class TextEditor extends Model
     @disposables = new CompositeDisposable
     @cursors = []
     @cursorsByMarkerId = new Map
+    @selectionsByMarkerId = new Map
+    @cursorsWithChangedVisibility = new Set
     @selections = []
     @subscribeToSelectionMarkerEvents = false
     @autoHeight ?= true
@@ -244,7 +246,7 @@ class TextEditor extends Model
     @resetDisplayLayer()
 
   subscribeToDisplayLayer: ->
-    @disposables.add @selectionsMarkerLayer.onDidCreateMarker @addSelection.bind(this)
+    @disposables.add @selectionsMarkerLayer.onDidUpdate(@updateSelections.bind(this))
     @disposables.add @tokenizedBuffer.onDidChangeGrammar @handleGrammarChange.bind(this)
     @disposables.add @tokenizedBuffer.onDidTokenize @handleTokenization.bind(this)
     @disposables.add @displayLayer.onDidChangeSync (e) =>
@@ -2137,6 +2139,59 @@ class TextEditor extends Model
   cursorMoved: (event) ->
     @emitter.emit 'did-change-cursor-position', event
 
+  updateSelections: ({created, updated, invalidated, destroyed}) ->
+    createdSelections = new Set
+    createdCursors = new Set
+    created.forEach (id) =>
+      selection = @addSelection(@selectionsMarkerLayer.getMarker(id))
+      cursor = selection.cursor
+      createdSelections.add(selection)
+      createdCursors.add(cursor)
+
+    updatedSelections = new Set
+    updatedCursors = new Set
+    updated.forEach (id) =>
+      selection = @selectionsByMarkerId.get(id)
+      cursor = selection.cursor
+      updatedSelections.add(selection)
+      updatedCursors.add(cursor)
+
+    @cursorsWithChangedVisibility.forEach (id) =>
+      updatedCursors.add(@cursorsByMarkerId.get(id))
+    @cursorsWithChangedVisibility = new Set
+
+    invalidatedSelections = new Set
+    invalidatedCursors = new Set
+    invalidated.forEach (id) =>
+      selection = @selectionsByMarkerId.get(id)
+      cursor = selection.cursor
+      invalidatedSelections.add(selection)
+      invalidatedCursors.add(cursor)
+
+    destroyedSelections = new Set
+    destroyedCursors = new Set
+    destroyed.forEach (id) =>
+      selection = @selectionsByMarkerId.get(id)
+      cursor = selection.cursor
+      destroyedSelections.add(selection)
+      destroyedCursors.add(cursor)
+      @removeSelection(selection)
+
+    @emitter.emit 'did-update-selections', {created: createdSelections, updated: updatedSelections, invalidated: invalidatedSelections, destroyed: destroyedSelections}
+    @emitter.emit 'did-update-cursors', {created: createdCursors, updated: updatedCursors, invalidated: invalidatedCursors, destroyed: destroyedCursors}
+
+  onDidUpdateCursors: (callback) ->
+    @emitter.on 'did-update-cursors', callback
+
+  onDidUpdateSelections: (callback) ->
+    @emitter.on 'did-update-selections', callback
+
+  didUpdateCursorVisibility: (id) ->
+    if @buffer.transactCallDepth is 0
+      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId.get(id)]), invalidated: new Set, destroyed: new Set}
+    else
+      @cursorsWithChangedVisibility.add(id)
+
   # Merge cursors that have the same screen position
   mergeCursors: ->
     positions = {}
@@ -2607,6 +2662,7 @@ class TextEditor extends Model
   addSelection: (marker, options={}) ->
     cursor = @addCursor(marker)
     selection = new Selection(_.extend({editor: this, marker, cursor, @clipboard}, options))
+    @selectionsByMarkerId.set(marker.id, selection)
     if @subscribeToSelectionMarkerEvents
       selection.subscribeToMarkerEvents()
     @selections.push(selection)
@@ -2623,9 +2679,12 @@ class TextEditor extends Model
 
   # Remove the given selection.
   removeSelection: (selection) ->
+    selection.destroyed = true
+    selection.cursor.destroyed = true
     _.remove(@cursors, selection.cursor)
     _.remove(@selections, selection)
     @cursorsByMarkerId.delete(selection.cursor.marker.id)
+    @selectionsByMarkerId.delete(selection.cursor.marker.id)
     @emitter.emit 'did-remove-cursor', selection.cursor
     @emitter.emit 'did-remove-selection', selection
 
