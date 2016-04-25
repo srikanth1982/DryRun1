@@ -2153,6 +2153,7 @@ class TextEditor extends Model
     updated.forEach (id) =>
       selection = @selectionsByMarkerId.get(id)
       cursor = selection.cursor
+      cursor.goalColumn = null
       updatedSelections.add(selection)
       updatedCursors.add(cursor)
 
@@ -2165,6 +2166,7 @@ class TextEditor extends Model
     invalidated.forEach (id) =>
       selection = @selectionsByMarkerId.get(id)
       cursor = selection.cursor
+      cursor.goalColumn = null
       invalidatedSelections.add(selection)
       invalidatedCursors.add(cursor)
 
