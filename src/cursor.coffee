@@ -15,14 +15,12 @@ class Cursor extends Model
   screenPosition: null
   bufferPosition: null
   goalColumn: null
-  visible: true
 
   # Instantiated by a {TextEditor}
   constructor: ({@editor, @marker, @config, id}) ->
     @emitter = new Emitter
 
     @assignId(id)
-    @updateVisibility()
 
   destroy: ->
     @marker.destroy()
@@ -572,10 +570,11 @@ class Cursor extends Model
       @emitter.emit 'did-change-visibility', @visible
 
   # Public: Returns the visibility of the cursor.
-  isVisible: -> @visible
-
-  updateVisibility: ->
-    @setVisible(@marker.getBufferRange().isEmpty())
+  isVisible: ->
+    if @visible?
+      @visible
+    else
+      @getBufferRange().isEmpty()
 
   ###
   Section: Comparing to another cursor
