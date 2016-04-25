@@ -2163,7 +2163,7 @@ class TextEditor extends Model
   cursorMoved: (event) ->
     @emitter.emit 'did-change-cursor-position', event
 
-  updateSelections: ({created, updated, invalidated, destroyed}) ->
+  updateSelections: ({created, updated, touched, destroyed}) ->
     createdSelections = new Set
     createdCursors = new Set
     created.forEach (id) =>
@@ -2185,14 +2185,14 @@ class TextEditor extends Model
       updatedCursors.add(@cursorsByMarkerId.get(id))
     @cursorsWithChangedVisibility = new Set
 
-    invalidatedSelections = new Set
-    invalidatedCursors = new Set
-    invalidated.forEach (id) =>
+    touchedSelections = new Set
+    touchedCursors = new Set
+    touched.forEach (id) =>
       selection = @selectionsByMarkerId.get(id)
       cursor = selection.cursor
       cursor.goalColumn = null
-      invalidatedSelections.add(selection)
-      invalidatedCursors.add(cursor)
+      touchedSelections.add(selection)
+      touchedCursors.add(cursor)
 
     destroyedSelections = new Set
     destroyedCursors = new Set
@@ -2203,8 +2203,8 @@ class TextEditor extends Model
       destroyedCursors.add(cursor)
       @removeSelection(selection)
 
-    @emitter.emit 'did-update-selections', {created: createdSelections, updated: updatedSelections, invalidated: invalidatedSelections, destroyed: destroyedSelections}
-    @emitter.emit 'did-update-cursors', {created: createdCursors, updated: updatedCursors, invalidated: invalidatedCursors, destroyed: destroyedCursors}
+    @emitter.emit 'did-update-selections', {created: createdSelections, updated: updatedSelections, touched: touchedSelections, destroyed: destroyedSelections}
+    @emitter.emit 'did-update-cursors', {created: createdCursors, updated: updatedCursors, touched: touchedCursors, destroyed: destroyedCursors}
 
   onDidUpdateCursors: (callback) ->
     @emitter.on 'did-update-cursors', callback
@@ -2214,7 +2214,7 @@ class TextEditor extends Model
 
   didUpdateCursorVisibility: (id) ->
     if @buffer.transactCallDepth is 0
-      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId.get(id)]), invalidated: new Set, destroyed: new Set}
+      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId.get(id)]), touched: new Set, destroyed: new Set}
     else
       @cursorsWithChangedVisibility.add(id)
 
