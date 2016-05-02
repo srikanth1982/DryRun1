@@ -328,7 +328,7 @@ class TextEditorComponent
         # clipboard.writeText is a sync ipcRenderer call on Linux and that
         # will slow down selections.
         ipcRenderer.send('write-text-to-selection-clipboard', selectedText)
-    @disposables.add @editor.onDidChangeSelectionRange ->
+    @disposables.add @editor.onDidUpdateSelections ->
       clearTimeout(timeoutId)
       timeoutId = setTimeout(writeSelectedTextToSelectionClipboard)
 
