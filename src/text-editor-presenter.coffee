@@ -139,10 +139,14 @@ class TextEditorPresenter
 
   observeModel: ->
     @disposables.add @model.displayLayer.onDidChangeSync (changes) =>
-      for change in changes
-        startRow = change.start.row
-        endRow = startRow + change.oldExtent.row
-        @spliceBlockDecorationsInRange(startRow, endRow, change.newExtent.row - change.oldExtent.row)
+      for {start, oldExtent, newExtent} in changes
+        invalidatedBlockDecorationIds = @lineTopIndex.splice(start.row, oldExtent.row, newExtent.row)
+        invalidatedBlockDecorationIds.forEach (id) =>
+          decoration = @model.decorationForId(id)
+          newScreenPosition = decoration.getMarker().getHeadScreenPosition()
+          @lineTopIndex.moveBlock(id, newScreenPosition.row)
+          @invalidatedDimensionsByBlockDecoration.add(decoration)
+
       @shouldUpdateDecorations = true
       @emitDidUpdateState()
 
@@ -1333,18 +1337,6 @@ class TextEditorPresenter
     @invalidatedDimensionsByBlockDecoration.add(decoration)
     @shouldUpdateDecorations = true
     @emitDidUpdateState()
-
-  spliceBlockDecorationsInRange: (start, end, screenDelta) ->
-    return if screenDelta is 0
-
-    oldExtent = end - start
-    newExtent = end - start + screenDelta
-    invalidatedBlockDecorationIds = @lineTopIndex.splice(start, oldExtent, newExtent)
-    invalidatedBlockDecorationIds.forEach (id) =>
-      decoration = @model.decorationForId(id)
-      newScreenPosition = decoration.getMarker().getHeadScreenPosition()
-      @lineTopIndex.moveBlock(id, newScreenPosition.row)
-      @invalidatedDimensionsByBlockDecoration.add(decoration)
 
   didAddBlockDecoration: (decoration) ->
     return if not decoration.isType('block') or @observedBlockDecorations.has(decoration)
