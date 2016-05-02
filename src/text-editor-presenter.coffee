@@ -150,6 +150,10 @@ class TextEditorPresenter
       @shouldUpdateDecorations = true
       @emitDidUpdateState()
 
+    @disposables.add @model.onDidUpdateSelections =>
+      @shouldUpdateDecorations = true
+      @emitDidUpdateState()
+
     @disposables.add @model.onDidUpdateCursors =>
       @pauseCursorBlinking()
       @emitDidUpdateState()
