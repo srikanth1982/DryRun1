@@ -327,7 +327,7 @@ class TextEditor extends Model
   onDidStopChanging: (callback) ->
     @getBuffer().onDidStopChanging(callback)
 
-  # Essential: Calls your `callback` when a {Cursor} is moved. If there are
+  # Deprecated: Calls your `callback` when a {Cursor} is moved. If there are
   # multiple cursors, your callback will be called for each cursor.
   #
   # * `callback` {Function}
@@ -350,7 +350,7 @@ class TextEditor extends Model
       """)
     @emitter.on 'did-change-cursor-position', callback
 
-  # Essential: Calls your `callback` when a selection's screen range changes.
+  # Deprecated: Calls your `callback` when a selection's screen range changes.
   #
   # * `callback` {Function}
   #   * `event` {Object}
@@ -476,7 +476,7 @@ class TextEditor extends Model
     callback(cursor) for cursor in @getCursors()
     @onDidAddCursor(callback)
 
-  # Extended: Calls your `callback` when a {Cursor} is added to the editor.
+  # Deprecated: Calls your `callback` when a {Cursor} is added to the editor.
   #
   # * `callback` {Function}
   #   * `cursor` {Cursor} that was added
@@ -489,7 +489,7 @@ class TextEditor extends Model
 
     @emitter.on 'did-add-cursor', callback
 
-  # Extended: Calls your `callback` when a {Cursor} is removed from the editor.
+  # Deprecated: Calls your `callback` when a {Cursor} is removed from the editor.
   #
   # * `callback` {Function}
   #   * `cursor` {Cursor} that was removed
@@ -513,7 +513,7 @@ class TextEditor extends Model
     callback(selection) for selection in @getSelections()
     @onDidAddSelection(callback)
 
-  # Extended: Calls your `callback` when a {Selection} is added to the editor.
+  # Deprecated: Calls your `callback` when a {Selection} is added to the editor.
   #
   # * `callback` {Function}
   #   * `selection` {Selection} that was added
@@ -526,7 +526,7 @@ class TextEditor extends Model
 
     @emitter.on 'did-add-selection', callback
 
-  # Extended: Calls your `callback` when a {Selection} is removed from the editor.
+  # Deprecated: Calls your `callback` when a {Selection} is removed from the editor.
   #
   # * `callback` {Function}
   #   * `selection` {Selection} that was removed
@@ -2205,9 +2205,41 @@ class TextEditor extends Model
     @emitter.emit 'did-update-selections', {created: createdSelections, updated: updatedSelections, touched: touchedSelections, destroyed: destroyedSelections}
     @emitter.emit 'did-update-cursors', {created: createdCursors, updated: updatedCursors, touched: touchedCursors, destroyed: destroyedCursors}
 
+  # Public: Calls your `callback` when any cursor is added,
+  # updated, touched or destroyed. If this happens outside a
+  # transaction, `callback` will be invoked immediately after performing
+  # any of the above operations. Otherwise, `callback` will be invoked
+  # at the end of the open transaction.
+  #
+  # * `callback` {Function}
+  #   * `event` {Object}
+  #     * `created` A {Set} of {Cursor} objects that were created.
+  #     * `updated` A {Set} of {Cursor} objects that were manually moved
+  #     (e.g. via {TextEditor::setCursorBufferPosition}) or whose
+  #     visibility changed.
+  #     * `touched` A {Set} of {Cursor} objects that were automatically updated after a text change.
+  #     * `destroyed` A {Set} of {Cursor} objects that were destroyed.
+  #
+  # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidUpdateCursors: (callback) ->
     @emitter.on 'did-update-cursors', callback
 
+  # Public: Calls your `callback` when any selection is added,
+  # updated, touched or destroyed. If this happens outside a
+  # transaction, `callback` will be invoked immediately after performing
+  # any of the above operations. Otherwise, `callback` will be invoked
+  # at the end of the open transaction.
+  #
+  # * `callback` {Function}
+  #   * `event` {Object}
+  #     * `created` A {Set} of {Selection} objects that were created.
+  #     * `updated` A {Set} of {Selection} objects that were manually
+  #     moved (e.g. via {TextEditor::setSelectedBufferRanges}) or whose
+  #     visibility changed.
+  #     * `touched` A {Set} of {Selection} objects that were automatically updated after a text change.
+  #     * `destroyed` A {Set} of {Selection} objects that were destroyed.
+  #
+  # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidUpdateSelections: (callback) ->
     @emitter.on 'did-update-selections', callback
 
