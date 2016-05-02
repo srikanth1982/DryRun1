@@ -162,10 +162,15 @@ class TextEditorPresenter
       @pauseCursorBlinking()
       @emitDidUpdateState()
 
-    @disposables.add @model.onDidAddDecoration(@didAddBlockDecoration.bind(this))
+    @disposables.add @model.observeDecorations (decoration) =>
+      if decoration.isType('block')
+        @didAddBlockDecoration(decoration)
 
-    for decoration in @model.getDecorations({type: 'block'})
-      this.didAddBlockDecoration(decoration)
+    @disposables.add @model.defaultMarkerLayer.onDidUpdate ({updated}) =>
+      updated.forEach (id) =>
+        for decoration in @model.decorationsForMarkerId(id) when decoration.isType('block')
+          @didMoveBlockDecoration(decoration)
+          @shouldUpdateDecorations = true
 
     @disposables.add @model.onDidChangeGrammar(@didChangeGrammar.bind(this))
     @disposables.add @model.onDidChangePlaceholderText(@emitDidUpdateState.bind(this))
@@ -1339,15 +1344,10 @@ class TextEditorPresenter
     @emitDidUpdateState()
 
   didAddBlockDecoration: (decoration) ->
-    return if not decoration.isType('block') or @observedBlockDecorations.has(decoration)
-
-    didMoveDisposable = decoration.getMarker().bufferMarker.onDidChange (markerEvent) =>
-      @didMoveBlockDecoration(decoration, markerEvent)
+    return if @observedBlockDecorations.has(decoration)
 
     didDestroyDisposable = decoration.onDidDestroy =>
-      @disposables.remove(didMoveDisposable)
       @disposables.remove(didDestroyDisposable)
-      didMoveDisposable.dispose()
       didDestroyDisposable.dispose()
       @didDestroyBlockDecoration(decoration)
 
@@ -1356,16 +1356,11 @@ class TextEditorPresenter
 
     @observedBlockDecorations.add(decoration)
     @invalidateBlockDecorationDimensions(decoration)
-    @disposables.add(didMoveDisposable)
     @disposables.add(didDestroyDisposable)
     @shouldUpdateDecorations = true
     @emitDidUpdateState()
 
-  didMoveBlockDecoration: (decoration, markerEvent) ->
-    # Don't move blocks after a text change, because we already splice on buffer
-    # change.
-    return if markerEvent.textChanged
-
+  didMoveBlockDecoration: (decoration) ->
     @lineTopIndex.moveBlock(decoration.getId(), decoration.getMarker().getHeadScreenPosition().row)
     @shouldUpdateDecorations = true
     @emitDidUpdateState()
