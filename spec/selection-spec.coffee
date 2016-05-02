@@ -69,15 +69,6 @@ describe "Selection", ->
         selection.selectLine()
         expect(selection.getBufferRange()).toEqual [[2, 0], [4, 0]]
 
-  describe "when only the selection's tail is moved (regression)", ->
-    it "notifies ::onDidChangeRange observers", ->
-      selection.setBufferRange([[2, 0], [2, 10]], reversed: true)
-      changeScreenRangeHandler = jasmine.createSpy('changeScreenRangeHandler')
-      selection.onDidChangeRange changeScreenRangeHandler
-
-      buffer.insert([2, 5], 'abc')
-      expect(changeScreenRangeHandler).toHaveBeenCalled()
-
   describe "when the selection is destroyed", ->
     it "destroys its marker", ->
       selection.setBufferRange([[2, 0], [2, 10]])
