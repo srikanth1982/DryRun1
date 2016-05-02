@@ -307,11 +307,11 @@ class Cursor extends Model
 
   # Public: Moves the cursor to the top of the buffer.
   moveToTop: ->
-    @setBufferPosition([0, 0])
+    @setBufferPosition([0, 0], retainGoalColumn: true)
 
   # Public: Moves the cursor to the bottom of the buffer.
   moveToBottom: ->
-    @setBufferPosition(@editor.getEofBufferPosition())
+    @setBufferPosition(@editor.getEofBufferPosition(), retainGoalColumn: true)
 
   # Public: Moves the cursor to the beginning of the line.
   moveToBeginningOfScreenLine: ->
