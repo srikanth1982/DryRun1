@@ -2117,8 +2117,8 @@ class TextEditor extends Model
 
   # Extended: Returns the most recently added {Cursor}
   getLastCursor: ->
-    @createLastSelectionIfNeeded()
-    _.last(@cursors)
+    cursors = @getCursors()
+    cursors[cursors.length - 1]
 
   # Extended: Returns the word surrounding the most recently added cursor.
   #
@@ -2129,7 +2129,7 @@ class TextEditor extends Model
   # Extended: Get an Array of all {Cursor}s.
   getCursors: ->
     @createLastSelectionIfNeeded()
-    @cursors.slice()
+    cursor for cursor in @cursors when not cursor.marker.isDestroyed()
 
   # Extended: Get all {Cursors}s, ordered by their position in the buffer
   # instead of the order in which they were added.
@@ -2565,15 +2565,15 @@ class TextEditor extends Model
   #
   # Returns a {Selection}.
   getLastSelection: ->
-    @createLastSelectionIfNeeded()
-    _.last(@selections)
+    selections = @getSelections()
+    selections[selections.length - 1]
 
   # Extended: Get current {Selection}s.
   #
   # Returns: An {Array} of {Selection}s.
   getSelections: ->
     @createLastSelectionIfNeeded()
-    @selections.slice()
+    selection for selection in @selections when not selection.marker.isDestroyed()
 
   # Extended: Get all {Selection}s, ordered by their position in the buffer
   # instead of the order in which they were added.
