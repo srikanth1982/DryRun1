@@ -1175,12 +1175,8 @@ describe('TextEditorComponent', function () {
       expect(cursorNodes[0].offsetHeight).toBe(lineHeightInPixels)
       expect(cursorNodes[0].offsetWidth).toBeCloseTo(charWidth, 0)
       expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(5 * charWidth)) + 'px, ' + (0 * lineHeightInPixels) + 'px)')
-      let cursor2 = editor.addCursorAtScreenPosition([8, 11], {
-        autoscroll: false
-      })
-      let cursor3 = editor.addCursorAtScreenPosition([4, 10], {
-        autoscroll: false
-      })
+      let cursor2 = editor.addCursorAtScreenPosition([8, 11], {autoscroll: false})
+      let cursor3 = editor.addCursorAtScreenPosition([4, 10], {autoscroll: false})
       await nextViewUpdatePromise()
 
       cursorNodes = componentNode.querySelectorAll('.cursor')
@@ -1200,14 +1196,10 @@ describe('TextEditorComponent', function () {
       expect(cursorNodes.length).toBe(2)
       expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(10 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
       expect(cursorNodes[1].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (8 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
-      editor.onDidChangeCursorPosition(cursorMovedListener = jasmine.createSpy('cursorMovedListener'))
-      cursor3.setScreenPosition([4, 11], {
-        autoscroll: false
-      })
+      cursor3.setScreenPosition([4, 11], {autoscroll: false})
       await nextViewUpdatePromise()
 
       expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
-      expect(cursorMovedListener).toHaveBeenCalled()
       cursor3.destroy()
       await nextViewUpdatePromise()
 
