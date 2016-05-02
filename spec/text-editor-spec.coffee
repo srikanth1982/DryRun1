@@ -263,25 +263,18 @@ describe "TextEditor", ->
         editor.moveDown()
         expect(editor.getCursorBufferPosition()).toEqual [1, 1]
 
-      it "emits an event with the old position, new position, and the cursor that moved", ->
-        cursorCallback = jasmine.createSpy('cursor-changed-position')
-        editorCallback = jasmine.createSpy('editor-changed-cursor-position')
-
-        editor.getLastCursor().onDidChangePosition(cursorCallback)
-        editor.onDidChangeCursorPosition(editorCallback)
+      it "emits an event with the cursor that moved", ->
+        editor.onDidUpdateCursors(callback = jasmine.createSpy('::onDidUpdateCursors'))
 
         editor.setCursorBufferPosition([2, 4])
 
-        expect(editorCallback).toHaveBeenCalled()
-        expect(cursorCallback).toHaveBeenCalled()
-        eventObject = editorCallback.mostRecentCall.args[0]
-        expect(cursorCallback.mostRecentCall.args[0]).toEqual(eventObject)
-
-        expect(eventObject.oldBufferPosition).toEqual [0, 0]
-        expect(eventObject.oldScreenPosition).toEqual [0, 0]
-        expect(eventObject.newBufferPosition).toEqual [2, 4]
-        expect(eventObject.newScreenPosition).toEqual [2, 4]
-        expect(eventObject.cursor).toBe editor.getLastCursor()
+        expect(callback.calls.length).toBe(1)
+        expect(callback).toHaveBeenCalledWith({
+          created: new Set,
+          updated: new Set([editor.getLastCursor()]),
+          touched: new Set,
+          destroyed: new Set
+        })
 
     describe ".setCursorScreenPosition(screenPosition)", ->
       it "clears a goal column established by vertical movement", ->
@@ -1208,20 +1201,19 @@ describe "TextEditor", ->
         expect(editor.getSelections()[0].getBufferRange()).toEqual([[0, 0], [0, 0]])
 
     describe "when the selection range changes", ->
-      it "emits an event with the old range, new range, and the selection that moved", ->
+      it "emits an event with the selection that moved", ->
         editor.setSelectedBufferRange([[3, 0], [4, 5]])
 
-        editor.onDidChangeSelectionRange rangeChangedHandler = jasmine.createSpy()
+        editor.onDidUpdateSelections callback = jasmine.createSpy()
         editor.selectToBufferPosition([6, 2])
 
-        expect(rangeChangedHandler).toHaveBeenCalled()
-        eventObject = rangeChangedHandler.mostRecentCall.args[0]
-
-        expect(eventObject.oldBufferRange).toEqual [[3, 0], [4, 5]]
-        expect(eventObject.oldScreenRange).toEqual [[3, 0], [4, 5]]
-        expect(eventObject.newBufferRange).toEqual [[3, 0], [6, 2]]
-        expect(eventObject.newScreenRange).toEqual [[3, 0], [6, 2]]
-        expect(eventObject.selection).toBe selection
+        expect(callback.calls.length).toBe(1)
+        expect(callback).toHaveBeenCalledWith({
+          created: new Set,
+          updated: new Set([editor.getLastSelection()]),
+          touched: new Set
+          destroyed: new Set
+        })
 
     describe ".selectUp/Down/Left/Right()", ->
       it "expands each selection to its cursor's new location", ->
@@ -3208,13 +3200,6 @@ describe "TextEditor", ->
 
     describe ".backspace()", ->
       describe "when there is a single cursor", ->
-        changeScreenRangeHandler = null
-
-        beforeEach ->
-          selection = editor.getLastSelection()
-          changeScreenRangeHandler = jasmine.createSpy('changeScreenRangeHandler')
-          selection.onDidChangeRange changeScreenRangeHandler
-
         describe "when the cursor is on the middle of the line", ->
           it "removes the character before the cursor", ->
             editor.setCursorScreenPosition(row: 1, column: 7)
@@ -3225,7 +3210,6 @@ describe "TextEditor", ->
             line = buffer.lineForRow(1)
             expect(line).toBe "  var ort = function(items) {"
             expect(editor.getCursorScreenPosition()).toEqual {row: 1, column: 6}
-            expect(changeScreenRangeHandler).toHaveBeenCalled()
             expect(editor.getLastCursor().isVisible()).toBeTruthy()
 
         describe "when the cursor is at the beginning of a line", ->
@@ -3242,8 +3226,6 @@ describe "TextEditor", ->
             expect(line0).toBe "var quicksort = function () {  var sort = function(items) {"
             expect(line1).toBe "    if (items.length <= 1) return items;"
             expect(editor.getCursorScreenPosition()).toEqual [0, originalLine0.length]
-
-            expect(changeScreenRangeHandler).toHaveBeenCalled()
 
         describe "when the cursor is at the first column of the first line", ->
           it "does nothing, but doesn't raise an error", ->
