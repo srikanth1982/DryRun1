@@ -580,7 +580,7 @@ class Cursor extends Model
   setVisible: (visible) ->
     if @visible isnt visible
       @visible = visible
-      @editor.didUpdateCursorVisibility(@marker.id)
+      @editor.didUpdateCursorVisibility(@marker.id) unless @marker.isDestroyed()
       @emitter.emit 'did-change-visibility', @visible
 
   # Public: Returns the visibility of the cursor.

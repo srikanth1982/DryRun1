@@ -137,11 +137,8 @@ class TextEditor extends Model
     @firstVisibleScreenColumn ?= 0
     @emitter = new Emitter
     @disposables = new CompositeDisposable
-    @cursors = []
-    @cursorsByMarkerId = {}
     @selectionsByMarkerId = {}
     @cursorsWithChangedVisibility = new Set
-    @selections = []
     @subscribeToSelectionMarkerEvents = false
     @autoHeight ?= true
     @scrollPastEnd ?= true
@@ -171,7 +168,7 @@ class TextEditor extends Model
     @subscribeToBuffer()
     @subscribeToDisplayLayer()
 
-    if @cursors.length is 0 and not suppressCursorCreation
+    if @selectionsMarkerLayer.getMarkerCount() is 0 and not suppressCursorCreation
       initialLine = Math.max(parseInt(initialLine) or 0, 0)
       initialColumn = Math.max(parseInt(initialColumn) or 0, 0)
       @addCursorAtBufferPosition([initialLine, initialColumn])
@@ -277,7 +274,8 @@ class TextEditor extends Model
     @disposables.dispose()
     @tokenizedBuffer.destroy()
     @tabTypeSubscription.dispose()
-    selection.destroy() for selection in @selections.slice()
+    @selectionsByMarkerId = {}
+    @cursorsByMarkerId = {}
     @selectionsMarkerLayer.destroy()
     @buffer.release()
     @languageMode.destroy()
@@ -342,7 +340,7 @@ class TextEditor extends Model
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeCursorPosition: (callback) ->
     unless @subscribeToSelectionMarkerEvents
-      for selection in @selections
+      for selection in @getSelections()
         selection.subscribeToMarkerEvents()
       @subscribeToSelectionMarkerEvents = true
       Grim.deprecate("""
@@ -363,7 +361,7 @@ class TextEditor extends Model
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChangeSelectionRange: (callback) ->
     unless @subscribeToSelectionMarkerEvents
-      for selection in @selections
+      for selection in @getSelections()
         selection.subscribeToMarkerEvents()
       @subscribeToSelectionMarkerEvents = true
       Grim.deprecate("""
@@ -1635,6 +1633,7 @@ class TextEditor extends Model
   #
   # Returns a {Decoration} object
   decorateMarker: (marker, decorationParams) ->
+    return if @isDestroyed()
     @decorationManager.decorateMarker(marker, decorationParams)
 
   # Essential: Add a decoration to every marker in the given marker layer. Can
@@ -1959,7 +1958,7 @@ class TextEditor extends Model
   #
   # Returns the first matched {Cursor} or undefined
   getCursorAtScreenPosition: (position) ->
-    for cursor in @cursors
+    for cursor in @getCursors()
       return cursor if cursor.getScreenPosition().isEqual(position)
     undefined
 
@@ -2117,8 +2116,8 @@ class TextEditor extends Model
 
   # Extended: Returns the most recently added {Cursor}
   getLastCursor: ->
-    cursors = @getCursors()
-    cursors[cursors.length - 1]
+    @createLastSelectionIfNeeded()
+    @selectionForMarker(@selectionsMarkerLayer.getLastMarker())?.cursor
 
   # Extended: Returns the word surrounding the most recently added cursor.
   #
@@ -2129,7 +2128,10 @@ class TextEditor extends Model
   # Extended: Get an Array of all {Cursor}s.
   getCursors: ->
     @createLastSelectionIfNeeded()
-    cursor for cursor in @cursors when not cursor.marker.isDestroyed()
+    @selectionsMarkerLayer.getMarkers().map (marker) => @selectionForMarker(marker).cursor
+
+  selectionForMarker: (marker) ->
+    @selectionsByMarkerId[marker.id] ? @addSelection(marker)
 
   # Extended: Get all {Cursors}s, ordered by their position in the buffer
   # instead of the order in which they were added.
@@ -2141,20 +2143,9 @@ class TextEditor extends Model
   cursorsForScreenRowRange: (startScreenRow, endScreenRow) ->
     cursors = []
     for marker in @selectionsMarkerLayer.findMarkers(intersectsScreenRowRange: [startScreenRow, endScreenRow])
-      if cursor = @cursorsByMarkerId[marker.id]
-        cursors.push(cursor)
+      if selection = @selectionsByMarkerId[marker.id]
+        cursors.push(selection.cursor)
     cursors
-
-  # Add a cursor based on the given {DisplayMarker}.
-  addCursor: (marker) ->
-    cursor = new Cursor(editor: this, marker: marker, config: @config)
-    @cursors.push(cursor)
-    @cursorsByMarkerId[marker.id] = cursor
-    @decorateMarker(marker, type: 'line-number', class: 'cursor-line')
-    @decorateMarker(marker, type: 'line-number', class: 'cursor-line-no-selection', onlyHead: true, onlyEmpty: true)
-    @decorateMarker(marker, type: 'line', class: 'cursor-line', onlyEmpty: true)
-    @emitter.emit 'did-add-cursor', cursor
-    cursor
 
   moveCursors: (fn) ->
     fn(cursor) for cursor in @getCursors()
@@ -2167,40 +2158,44 @@ class TextEditor extends Model
     createdSelections = new Set
     createdCursors = new Set
     created.forEach (id) =>
-      selection = @addSelection(@selectionsMarkerLayer.getMarker(id))
-      cursor = selection.cursor
-      createdSelections.add(selection)
-      createdCursors.add(cursor)
+      if not @selectionsByMarkerId.hasOwnProperty(id) and marker = @selectionsMarkerLayer.getMarker(id)
+        @addSelection(marker)
+
+      if selection = @selectionsByMarkerId[id]
+        cursor = selection.cursor
+        createdSelections.add(selection)
+        createdCursors.add(cursor)
 
     updatedSelections = new Set
     updatedCursors = new Set
     updated.forEach (id) =>
-      selection = @selectionsByMarkerId[id]
-      cursor = selection.cursor
-      updatedSelections.add(selection)
-      updatedCursors.add(cursor)
+      if selection = @selectionsByMarkerId[id]
+        cursor = selection.cursor
+        updatedSelections.add(selection)
+        updatedCursors.add(cursor)
 
     @cursorsWithChangedVisibility.forEach (id) =>
-      updatedCursors.add(@cursorsByMarkerId[id])
+      if selection = @selectionsByMarkerId[id]
+        updatedCursors.add(selection.cursor)
     @cursorsWithChangedVisibility = new Set
 
     touchedSelections = new Set
     touchedCursors = new Set
     touched.forEach (id) =>
-      selection = @selectionsByMarkerId[id]
-      cursor = selection.cursor
-      cursor.goalColumn = null
-      touchedSelections.add(selection)
-      touchedCursors.add(cursor)
+      if selection = @selectionsByMarkerId[id]
+        cursor = selection.cursor
+        cursor.goalColumn = null
+        touchedSelections.add(selection)
+        touchedCursors.add(cursor)
 
     destroyedSelections = new Set
     destroyedCursors = new Set
     destroyed.forEach (id) =>
-      selection = @selectionsByMarkerId[id]
-      cursor = selection.cursor
-      destroyedSelections.add(selection)
-      destroyedCursors.add(cursor)
-      @removeSelection(selection)
+      if selection = @selectionsByMarkerId[id]
+        cursor = selection.cursor
+        destroyedSelections.add(selection)
+        destroyedCursors.add(cursor)
+        @removeSelection(selection)
 
     @emitter.emit 'did-update-selections', {created: createdSelections, updated: updatedSelections, touched: touchedSelections, destroyed: destroyedSelections}
     @emitter.emit 'did-update-cursors', {created: createdCursors, updated: updatedCursors, touched: touchedCursors, destroyed: destroyedCursors}
@@ -2245,7 +2240,9 @@ class TextEditor extends Model
 
   didUpdateCursorVisibility: (id) ->
     if @buffer.transactCallDepth is 0
-      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([@cursorsByMarkerId[id]]), touched: new Set, destroyed: new Set}
+      marker = @selectionsMarkerLayer.getMarker(id)
+      selection = @selectionForMarker(marker)
+      @emitter.emit 'did-update-cursors', {created: new Set, updated: new Set([selection.cursor]), touched: new Set, destroyed: new Set}
     else
       @cursorsWithChangedVisibility.add(id)
 
@@ -2597,15 +2594,15 @@ class TextEditor extends Model
   #
   # Returns a {Selection}.
   getLastSelection: ->
-    selections = @getSelections()
-    selections[selections.length - 1]
+    @createLastSelectionIfNeeded()
+    @selectionForMarker(@selectionsMarkerLayer.getLastMarker())
 
   # Extended: Get current {Selection}s.
   #
   # Returns: An {Array} of {Selection}s.
   getSelections: ->
     @createLastSelectionIfNeeded()
-    selection for selection in @selections when not selection.marker.isDestroyed()
+    @selectionsMarkerLayer.getMarkers().map (marker) => @selectionForMarker(marker)
 
   # Extended: Get all {Selection}s, ordered by their position in the buffer
   # instead of the order in which they were added.
@@ -2717,12 +2714,11 @@ class TextEditor extends Model
   #
   # Returns the new {Selection}.
   addSelection: (marker, options={}) ->
-    cursor = @addCursor(marker)
+    cursor = new Cursor(editor: this, marker: marker, config: @config)
     selection = new Selection(_.extend({editor: this, marker, cursor, @clipboard}, options))
     @selectionsByMarkerId[marker.id] = selection
     if @subscribeToSelectionMarkerEvents
       selection.subscribeToMarkerEvents()
-    @selections.push(selection)
     selectionBufferRange = selection.getBufferRange()
     @mergeIntersectingSelections(preserveFolds: options.preserveFolds)
 
@@ -2731,6 +2727,10 @@ class TextEditor extends Model
         if selection.intersectsBufferRange(selectionBufferRange)
           return selection
     else
+      @decorateMarker(marker, type: 'line-number', class: 'cursor-line')
+      @decorateMarker(marker, type: 'line-number', class: 'cursor-line-no-selection', onlyHead: true, onlyEmpty: true)
+      @decorateMarker(marker, type: 'line', class: 'cursor-line', onlyEmpty: true)
+      @emitter.emit 'did-add-cursor', cursor
       @emitter.emit 'did-add-selection', selection
       selection
 
@@ -2738,9 +2738,6 @@ class TextEditor extends Model
   removeSelection: (selection) ->
     selection.destroyed = true
     selection.cursor.destroyed = true
-    _.remove(@cursors, selection.cursor)
-    _.remove(@selections, selection)
-    delete @cursorsByMarkerId[selection.cursor.marker.id]
     delete @selectionsByMarkerId[selection.marker.id]
     @emitter.emit 'did-remove-cursor', selection.cursor
     @emitter.emit 'did-remove-selection', selection
@@ -2766,7 +2763,7 @@ class TextEditor extends Model
     @emitter.emit 'did-change-selection-range', event
 
   createLastSelectionIfNeeded: ->
-    if @selections.length is 0
+    if @selectionsMarkerLayer.getMarkerCount() is 0
       @addSelectionForBufferRange([[0, 0], [0, 0]], autoscroll: false, preserveFolds: true)
 
   ###
