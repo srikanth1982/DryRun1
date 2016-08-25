@@ -442,6 +442,8 @@ class Package
       if (@viewRegistry.getViewProviderCount() is previousViewProviderCount and
           @deserializerManager.getDeserializerCount() is previousDeserializerCount)
         localStorage.setItem(@getCanDeferMainModuleRequireStorageKey(), 'true')
+      else
+        localStorage.removeItem(@getCanDeferMainModuleRequireStorageKey())
 
   getMainModulePath: ->
     return @mainModulePath if @resolvedMainModulePath
