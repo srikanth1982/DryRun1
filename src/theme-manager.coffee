@@ -174,8 +174,8 @@ class ThemeManager
 
   reloadBaseStylesheets: ->
     @requireStylesheet('../static/atom')
-    if nativeStylesheetPath = fs.resolveOnLoadPath(process.platform, ['css', 'less'])
-      @requireStylesheet(nativeStylesheetPath)
+    # if nativeStylesheetPath = fs.resolveOnLoadPath(process.platform, ['css', 'less'])
+    #   @requireStylesheet(nativeStylesheetPath)
 
   stylesheetElementForId: (id) ->
     document.head.querySelector("atom-styles style[source-path=\"#{id}\"]")

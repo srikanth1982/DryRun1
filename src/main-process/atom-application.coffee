@@ -94,6 +94,7 @@ class AtomApplication
 
     @listenForArgumentsFromNewProcess()
     @setupDockMenu()
+    # app.commandLine.appendSwitch('js-flags', '--no-lazy');
 
     @launch(options)
 

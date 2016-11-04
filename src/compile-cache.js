@@ -207,8 +207,8 @@ Error.prototype.getRawStack = function () { // eslint-disable-line no-extend-nat
 
 Object.keys(COMPILERS).forEach(function (extension) {
   var compiler = COMPILERS[extension]
-
-  Object.defineProperty(require.extensions, extension, {
+  let globalRequire = global.require || require;
+  Object.defineProperty(globalRequire.extensions, extension, {
     enumerable: true,
     writable: false,
     value: function (module, filePath) {

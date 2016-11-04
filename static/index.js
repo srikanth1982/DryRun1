@@ -1,7 +1,7 @@
 (function () {
   var path = require('path')
-  var FileSystemBlobStore = require('../src/file-system-blob-store')
-  var NativeCompileCache = require('../src/native-compile-cache')
+  // var FileSystemBlobStore = require('../src/file-system-blob-store')
+  // var NativeCompileCache = require('../src/native-compile-cache')
 
   var loadSettings = null
   var loadSettingsError = null
@@ -15,12 +15,12 @@
         console.error('Unhandled promise rejection %o with error: %o', promise, error)
       })
 
-      blobStore = FileSystemBlobStore.load(
-        path.join(process.env.ATOM_HOME, 'blob-store/')
-      )
-      NativeCompileCache.setCacheStore(blobStore)
-      NativeCompileCache.setV8Version(process.versions.v8)
-      NativeCompileCache.install()
+      // blobStore = FileSystemBlobStore.load(
+      //   path.join(process.env.ATOM_HOME, 'blob-store/')
+      // )
+      // NativeCompileCache.setCacheStore(blobStore)
+      // NativeCompileCache.setV8Version(process.versions.v8)
+      // NativeCompileCache.install()
 
       // Normalize to make sure drive letter case is consistent on Windows
       process.resourcesPath = path.normalize(process.resourcesPath)
@@ -53,6 +53,7 @@
   }
 
   function handleSetupError (error) {
+    console.timeEnd('evaluating')
     var currentWindow = require('electron').remote.getCurrentWindow()
     currentWindow.setSize(800, 600)
     currentWindow.center()
@@ -65,9 +66,9 @@
     var CompileCache = require('../src/compile-cache')
     CompileCache.setAtomHomeDirectory(process.env.ATOM_HOME)
 
-    var ModuleCache = require('../src/module-cache')
-    ModuleCache.register(loadSettings)
-    ModuleCache.add(loadSettings.resourcePath)
+    // var ModuleCache = require('../src/module-cache')
+    // ModuleCache.register(loadSettings)
+    // ModuleCache.add(loadSettings.resourcePath)
 
     // By explicitly passing the app version here, we could save the call
     // of "require('remote').require('app').getVersion()".
@@ -77,7 +78,7 @@
     setupVmCompatibility()
     setupCsonCache(CompileCache.getCacheDirectory())
 
-    var initialize = require(loadSettings.windowInitializationScript)
+    var initialize = require("../src/initialize-application-window")
     return initialize({blobStore: blobStore}).then(function () {
       require('electron').ipcRenderer.send('window-command', 'window:loaded')
     })

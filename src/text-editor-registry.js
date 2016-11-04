@@ -1,7 +1,7 @@
 /** @babel */
 
 import {Emitter, Disposable, CompositeDisposable} from 'event-kit'
-import {Point, Range} from 'atom'
+import {Point, Range} from '../exports/atom'
 import TextEditor from './text-editor'
 import ScopeDescriptor from './scope-descriptor'
 
