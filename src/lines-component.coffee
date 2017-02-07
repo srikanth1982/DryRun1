@@ -40,13 +40,13 @@ class LinesComponent extends TiledComponent
     @newState.continuousReflow
 
   beforeUpdateSync: (state) ->
-    if @newState.maxHeight isnt @oldState.maxHeight
-      @domNode.style.height = @newState.maxHeight + 'px'
-      @oldState.maxHeight = @newState.maxHeight
+    if @newState.height isnt @oldState.height
+      @domNode.style.height = @newState.height + 'px'
+      @oldState.height = @newState.height
 
-    if @newState.backgroundColor isnt @oldState.backgroundColor
-      @domNode.style.backgroundColor = @newState.backgroundColor
-      @oldState.backgroundColor = @newState.backgroundColor
+    if @newState.width isnt @oldState.width
+      @domNode.style.width = @newState.width + 'px'
+      @oldState.width = @newState.width
 
   afterUpdateSync: (state) ->
     if @newState.placeholderText isnt @oldState.placeholderText

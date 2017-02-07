@@ -71,10 +71,10 @@ class TextEditorElement extends HTMLElement
     @emitter.emit("did-detach")
 
   listenForComponentEvents: ->
-    @subscriptions.add @component.onDidChangeScrollTop =>
-      @emitter.emit("did-change-scroll-top", arguments...)
-    @subscriptions.add @component.onDidChangeScrollLeft =>
-      @emitter.emit("did-change-scroll-left", arguments...)
+    # @subscriptions.add @component.onDidChangeScrollTop =>
+    #   @emitter.emit("did-change-scroll-top", arguments...)
+    # @subscriptions.add @component.onDidChangeScrollLeft =>
+    #   @emitter.emit("did-change-scroll-left", arguments...)
 
   initialize: (model, {@views, @themes, @workspace, @assert, @styles}) ->
     throw new Error("Must pass a views parameter when initializing TextEditorElements") unless @views?
