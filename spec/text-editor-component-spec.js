@@ -9,7 +9,7 @@ import _, {extend, flatten, last, toArray} from 'underscore-plus'
 const NBSP = String.fromCharCode(160)
 const TILE_SIZE = 3
 
-describe('TextEditorComponent', function () {
+fdescribe('TextEditorComponent', function () {
   let charWidth, component, componentNode, contentNode, editor,
       horizontalScrollbarNode, lineHeightInPixels, tileHeightInPixels,
       verticalScrollbarNode, wrapperNode, animationFrameRequests
@@ -94,21 +94,21 @@ describe('TextEditorComponent', function () {
       }
     }
 
-    it('gives the lines container the same height as the wrapper node', function () {
+    it('gives the lines container a height based on the number of lines', function () {
       let linesNode = componentNode.querySelector('.lines')
       wrapperNode.style.height = 6.5 * lineHeightInPixels + 'px'
       editor.update({autoHeight: false})
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(linesNode.getBoundingClientRect().height).toBe(6.5 * lineHeightInPixels)
+      expect(linesNode.getBoundingClientRect().height).toBe(editor.getLineCount() * lineHeightInPixels)
       wrapperNode.style.height = 3.5 * lineHeightInPixels + 'px'
       editor.update({autoHeight: false})
       component.measureDimensions()
 
       runAnimationFrames()
 
-      expect(linesNode.getBoundingClientRect().height).toBe(3.5 * lineHeightInPixels)
+      expect(linesNode.getBoundingClientRect().height).toBe(editor.getLineCount() * lineHeightInPixels)
     })
 
     it('renders higher tiles in front of lower ones', function () {
@@ -122,8 +122,8 @@ describe('TextEditorComponent', function () {
       expect(tilesNodes[0].style.zIndex).toBe('2')
       expect(tilesNodes[1].style.zIndex).toBe('1')
       expect(tilesNodes[2].style.zIndex).toBe('0')
-      verticalScrollbarNode.scrollTop = 1 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 1 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       tilesNodes = component.tileNodesForLines()
@@ -181,15 +181,15 @@ describe('TextEditorComponent', function () {
 
       expect(component.lineNodeForScreenRow(9)).toBeUndefined()
 
-      verticalScrollbarNode.scrollTop = TILE_SIZE * lineHeightInPixels + 5
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = TILE_SIZE * lineHeightInPixels + 5
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       tilesNodes = component.tileNodesForLines()
       expect(component.lineNodeForScreenRow(2)).toBeUndefined()
       expect(tilesNodes.length).toBe(3)
 
-      expect(tilesNodes[0].style['-webkit-transform']).toBe('translate3d(0px, ' + (0 * tileHeightInPixels - 5) + 'px, 0px)')
+      expect(tilesNodes[0].style['-webkit-transform']).toBe('translate3d(0px, ' + (1 * tileHeightInPixels) + 'px, 0px)')
       expect(tilesNodes[0].querySelectorAll('.line').length).toBe(TILE_SIZE)
       expectTileContainsRow(tilesNodes[0], 3, {
         top: 0 * lineHeightInPixels
@@ -201,7 +201,7 @@ describe('TextEditorComponent', function () {
         top: 2 * lineHeightInPixels
       })
 
-      expect(tilesNodes[1].style['-webkit-transform']).toBe('translate3d(0px, ' + (1 * tileHeightInPixels - 5) + 'px, 0px)')
+      expect(tilesNodes[1].style['-webkit-transform']).toBe('translate3d(0px, ' + (2 * tileHeightInPixels) + 'px, 0px)')
       expect(tilesNodes[1].querySelectorAll('.line').length).toBe(TILE_SIZE)
       expectTileContainsRow(tilesNodes[1], 6, {
         top: 0 * lineHeightInPixels
@@ -213,7 +213,7 @@ describe('TextEditorComponent', function () {
         top: 2 * lineHeightInPixels
       })
 
-      expect(tilesNodes[2].style['-webkit-transform']).toBe('translate3d(0px, ' + (2 * tileHeightInPixels - 5) + 'px, 0px)')
+      expect(tilesNodes[2].style['-webkit-transform']).toBe('translate3d(0px, ' + (3 * tileHeightInPixels) + 'px, 0px)')
       expect(tilesNodes[2].querySelectorAll('.line').length).toBe(TILE_SIZE)
       expectTileContainsRow(tilesNodes[2], 9, {
         top: 0 * lineHeightInPixels
@@ -302,8 +302,8 @@ describe('TextEditorComponent', function () {
       component.measureDimensions()
       runAnimationFrames()
 
-      verticalScrollbarNode.scrollTop = 5 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 5 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       let buffer = editor.getBuffer()
@@ -342,15 +342,15 @@ describe('TextEditorComponent', function () {
       expect(component.lineNodeForScreenRow(1).offsetTop).toBe(1 * newLineHeightInPixels)
     })
 
-    it('renders the .lines div at the full height of the editor if there are not enough lines to scroll vertically', function () {
-      editor.setText('')
-      wrapperNode.style.height = '300px'
-      editor.update({autoHeight: false})
-      component.measureDimensions()
-      runAnimationFrames()
-      let linesNode = componentNode.querySelector('.lines')
-      expect(linesNode.offsetHeight).toBe(300)
-    })
+    // it('renders the .lines div at the full height of the editor if there are not enough lines to scroll vertically', function () {
+    //   editor.setText('')
+    //   wrapperNode.style.height = '300px'
+    //   editor.update({autoHeight: false})
+    //   component.measureDimensions()
+    //   runAnimationFrames()
+    //   let linesNode = componentNode.querySelector('.lines')
+    //   expect(linesNode.offsetHeight).toBe(300)
+    // })
 
     it('assigns the width of each line so it extends across the full width of the editor', function () {
       let gutterWidth = componentNode.querySelector('.gutter').offsetWidth
@@ -362,13 +362,13 @@ describe('TextEditorComponent', function () {
 
       runAnimationFrames()
 
-      expect(wrapperNode.getScrollWidth()).toBeGreaterThan(scrollViewNode.offsetWidth)
-      let editorFullWidth = wrapperNode.getScrollWidth() + wrapperNode.getVerticalScrollbarWidth()
+      expect(scrollViewNode.scrollWidth).toBeGreaterThan(scrollViewNode.offsetWidth)
+      let editorFullWidth = scrollViewNode.scrollWidth
       for (let lineNode of lineNodes) {
         expect(lineNode.getBoundingClientRect().width).toBe(editorFullWidth)
       }
 
-      componentNode.style.width = gutterWidth + wrapperNode.getScrollWidth() + 100 + 'px'
+      componentNode.style.width = gutterWidth + scrollViewNode.scrollWidth + 100 + 'px'
       component.measureDimensions()
 
       runAnimationFrames()
@@ -445,16 +445,16 @@ describe('TextEditorComponent', function () {
       expect(leafNodes[0].classList.contains('leading-whitespace')).toBe(false)
     })
 
-    it('keeps rebuilding lines when continuous reflow is on', function () {
-      wrapperNode.setContinuousReflow(true)
-      let oldLineNode = componentNode.querySelectorAll('.line')[1]
-
-      while (true) {
-        advanceClock(component.presenter.minimumReflowInterval)
-        runAnimationFrames()
-        if (componentNode.querySelectorAll('.line')[1] !== oldLineNode) break
-      }
-    })
+    // it('keeps rebuilding lines when continuous reflow is on', function () {
+    //   wrapperNode.setContinuousReflow(true)
+    //   let oldLineNode = componentNode.querySelectorAll('.line')[1]
+    //
+    //   while (true) {
+    //     advanceClock(component.presenter.minimumReflowInterval)
+    //     runAnimationFrames()
+    //     if (componentNode.querySelectorAll('.line')[1] !== oldLineNode) break
+    //   }
+    // })
 
     describe('when showInvisibles is enabled', function () {
       const invisibles = {
@@ -561,7 +561,7 @@ describe('TextEditorComponent', function () {
           editor.setSoftWrapped(true)
           runAnimationFrames()
 
-          componentNode.style.width = 17 * charWidth + wrapperNode.getVerticalScrollbarWidth() + 'px'
+          componentNode.style.width = 17 * charWidth + 'px'
           component.measureDimensions()
           runAnimationFrames()
         })
@@ -746,8 +746,8 @@ describe('TextEditorComponent', function () {
       expect(tilesNodes[0].style.zIndex).toBe('2')
       expect(tilesNodes[1].style.zIndex).toBe('1')
       expect(tilesNodes[2].style.zIndex).toBe('0')
-      verticalScrollbarNode.scrollTop = 1 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 1 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       tilesNodes = component.tileNodesForLineNumbers()
@@ -828,8 +828,8 @@ describe('TextEditorComponent', function () {
         top: lineHeightInPixels * 2,
         text: '' + NBSP + '9'
       })
-      verticalScrollbarNode.scrollTop = TILE_SIZE * lineHeightInPixels + 5
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = TILE_SIZE * lineHeightInPixels + 5
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       tilesNodes = component.tileNodesForLineNumbers()
@@ -1009,15 +1009,15 @@ describe('TextEditorComponent', function () {
       expect(component.lineNumberNodeForScreenRow(3) != null).toBe(true)
     })
 
-    it('keeps rebuilding line numbers when continuous reflow is on', function () {
-      wrapperNode.setContinuousReflow(true)
-      let oldLineNode = componentNode.querySelectorAll('.line-number')[1]
-
-      while (true) {
-        runAnimationFrames()
-        if (componentNode.querySelectorAll('.line-number')[1] !== oldLineNode) break
-      }
-    })
+    // it('keeps rebuilding line numbers when continuous reflow is on', function () {
+    //   wrapperNode.setContinuousReflow(true)
+    //   let oldLineNode = componentNode.querySelectorAll('.line-number')[1]
+    //
+    //   while (true) {
+    //     runAnimationFrames()
+    //     if (componentNode.querySelectorAll('.line-number')[1] !== oldLineNode) break
+    //   }
+    // })
 
     describe('fold decorations', function () {
       describe('rendering fold decorations', function () {
@@ -1075,7 +1075,7 @@ describe('TextEditorComponent', function () {
           beforeEach(function () {
             editor.setSoftWrapped(true)
             runAnimationFrames()
-            componentNode.style.width = 20 * charWidth + wrapperNode.getVerticalScrollbarWidth() + 'px'
+            componentNode.style.width = 20 * charWidth + 'px'
             component.measureDimensions()
             runAnimationFrames()
           })
@@ -1155,7 +1155,7 @@ describe('TextEditorComponent', function () {
           expect(lineNumberHasClass(5, 'folded')).toBe(true)
 
           editor.setSoftWrapped(true)
-          componentNode.style.width = 20 * charWidth + wrapperNode.getVerticalScrollbarWidth() + 'px'
+          componentNode.style.width = 20 * charWidth + 'px'
           component.measureDimensions()
           runAnimationFrames()
           editor.foldBufferRange([[3, 19], [3, 21]]) // fold starting on a soft-wrapped portion of the line
@@ -1211,32 +1211,32 @@ describe('TextEditorComponent', function () {
       expect(cursorNodes[0].offsetTop).toBe(0)
       expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(5 * charWidth)) + 'px, ' + (0 * lineHeightInPixels) + 'px)')
       expect(cursorNodes[1].style['-webkit-transform']).toBe('translate(' + (Math.round(10 * charWidth)) + 'px, ' + (4 * lineHeightInPixels) + 'px)')
-      verticalScrollbarNode.scrollTop = 4.5 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 4.5 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
-      horizontalScrollbarNode.scrollLeft = 3.5 * charWidth
-      horizontalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollLeft = 3.5 * charWidth
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       cursorNodes = componentNode.querySelectorAll('.cursor')
       expect(cursorNodes.length).toBe(2)
-      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(10 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
-      expect(cursorNodes[1].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (8 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
+      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(10 * charWidth - component.scrollViewNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - component.scrollViewNode.scrollTop) + 'px)')
+      expect(cursorNodes[1].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - component.scrollViewNode.scrollLeft)) + 'px, ' + (8 * lineHeightInPixels - component.scrollViewNode.scrollTop) + 'px)')
       editor.onDidChangeCursorPosition(cursorMovedListener = jasmine.createSpy('cursorMovedListener'))
       cursor3.setScreenPosition([4, 11], {
         autoscroll: false
       })
       runAnimationFrames()
 
-      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
+      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - component.scrollViewNode.scrollLeft)) + 'px, ' + (4 * lineHeightInPixels - component.scrollViewNode.scrollTop) + 'px)')
       expect(cursorMovedListener).toHaveBeenCalled()
       cursor3.destroy()
       runAnimationFrames()
 
       cursorNodes = componentNode.querySelectorAll('.cursor')
       expect(cursorNodes.length).toBe(1)
-      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - horizontalScrollbarNode.scrollLeft)) + 'px, ' + (8 * lineHeightInPixels - verticalScrollbarNode.scrollTop) + 'px)')
+      expect(cursorNodes[0].style['-webkit-transform']).toBe('translate(' + (Math.round(11 * charWidth - component.scrollViewNode.scrollLeft)) + 'px, ' + (8 * lineHeightInPixels - component.scrollViewNode.scrollTop) + 'px)')
     })
 
     it('accounts for character widths when positioning cursors', function () {
@@ -1572,8 +1572,8 @@ describe('TextEditorComponent', function () {
       await decorationsUpdatedPromise(editor)
       runAnimationFrames()
 
-      verticalScrollbarNode.scrollTop = 4.5 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 4.5 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       expect(lineAndLineNumberHaveClass(9, 'b')).toBe(true)
@@ -1794,7 +1794,7 @@ describe('TextEditorComponent', function () {
       )
       runAnimationFrames()
       expect(component.getDomNode().querySelectorAll(".line").length).toBe(7)
-      expect(verticalScrollbarNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 80 + 40 + 100 + 120 + 42 + 22)
+      expect(component.scrollViewNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 80 + 40 + 100 + 120 + 42 + 22)
       expect(component.tileNodesForLines()[0].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 80 + 40 + "px")
       expect(component.tileNodesForLines()[0].style.webkitTransform).toBe("translate3d(0px, 0px, 0px)")
       expect(component.tileNodesForLines()[1].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 100 + "px")
@@ -1816,7 +1816,7 @@ describe('TextEditorComponent', function () {
       blockDecoration1.destroy()
       runAnimationFrames()
       expect(component.getDomNode().querySelectorAll(".line").length).toBe(7)
-      expect(verticalScrollbarNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 40 + 100 + 120 + 42 + 22)
+      expect(component.scrollViewNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 40 + 100 + 120 + 42 + 22)
       expect(component.tileNodesForLines()[0].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + "px")
       expect(component.tileNodesForLines()[0].style.webkitTransform).toBe("translate3d(0px, 0px, 0px)")
       expect(component.tileNodesForLines()[1].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 100 + 40 + "px")
@@ -1840,7 +1840,7 @@ describe('TextEditorComponent', function () {
       runAnimationFrames() // causes the DOM to update and to retrieve new styles
       runAnimationFrames() // applies the changes
       expect(component.getDomNode().querySelectorAll(".line").length).toBe(7)
-      expect(verticalScrollbarNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 60 + 100 + 120 + 42 + 22)
+      expect(component.scrollViewNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 60 + 100 + 120 + 42 + 22)
       expect(component.tileNodesForLines()[0].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + "px")
       expect(component.tileNodesForLines()[0].style.webkitTransform).toBe("translate3d(0px, 0px, 0px)")
       expect(component.tileNodesForLines()[1].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 100 + 60 + "px")
@@ -1861,7 +1861,7 @@ describe('TextEditorComponent', function () {
       runAnimationFrames() // causes the DOM to update and to retrieve new styles
       runAnimationFrames() // applies the changes
       expect(component.getDomNode().querySelectorAll(".line").length).toBe(9)
-      expect(verticalScrollbarNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 20 + 100 + 120 + 42 + 22)
+      expect(component.scrollViewNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 20 + 100 + 120 + 42 + 22)
       expect(component.tileNodesForLines()[0].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + "px")
       expect(component.tileNodesForLines()[0].style.webkitTransform).toBe("translate3d(0px, 0px, 0px)")
       expect(component.tileNodesForLines()[1].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 100 + 20 + "px")
@@ -1884,7 +1884,7 @@ describe('TextEditorComponent', function () {
       runAnimationFrames() // causes the DOM to update and to retrieve new styles
       runAnimationFrames() // applies the changes
       expect(component.getDomNode().querySelectorAll(".line").length).toBe(9)
-      expect(verticalScrollbarNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 20 + 100 + 120 + 42 + 33)
+      expect(component.scrollViewNode.scrollHeight).toBe(editor.getScreenLineCount() * editor.getLineHeightInPixels() + 20 + 100 + 120 + 42 + 33)
       expect(component.tileNodesForLines()[0].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + "px")
       expect(component.tileNodesForLines()[0].style.webkitTransform).toBe("translate3d(0px, 0px, 0px)")
       expect(component.tileNodesForLines()[1].style.height).toBe(TILE_SIZE * editor.getLineHeightInPixels() + 100 + 20 + "px")
@@ -2017,8 +2017,8 @@ describe('TextEditorComponent', function () {
       expect(component.presenter.endRow).toBeLessThan(9)
       let regions = componentNode.querySelectorAll('.some-highlight .region')
       expect(regions.length).toBe(0)
-      verticalScrollbarNode.scrollTop = 6 * lineHeightInPixels
-      verticalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      component.scrollViewNode.scrollTop = 6 * lineHeightInPixels
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
 
       expect(component.presenter.endRow).toBeGreaterThan(8)
@@ -2371,7 +2371,7 @@ describe('TextEditorComponent', function () {
       runAnimationFrames()
 
       expect(inputNode.offsetTop).toBe((5 * lineHeightInPixels) - wrapperNode.getScrollTop())
-      expect(inputNode.offsetLeft).toBeCloseTo((4 * charWidth) - wrapperNode.getScrollLeft(), 0)
+      expect(inputNode.offsetLeft).toBeCloseTo((4 * charWidth) - component.scrollViewNode.scrollLeft, 0)
 
       inputNode.blur()
       runAnimationFrames()
@@ -2640,7 +2640,7 @@ describe('TextEditorComponent', function () {
         runAnimationFrames()
 
         expect(wrapperNode.getScrollTop()).toBe(0)
-        expect(wrapperNode.getScrollLeft()).toBe(0)
+        expect(component.scrollViewNode.scrollLeft).toBe(0)
 
         linesNode.dispatchEvent(buildMouseEvent('mousedown', {
           clientX: 0,
@@ -2660,7 +2660,7 @@ describe('TextEditorComponent', function () {
         }
 
         expect(wrapperNode.getScrollTop()).toBe(0)
-        expect(wrapperNode.getScrollLeft()).toBeGreaterThan(0)
+        expect(component.scrollViewNode.scrollLeft).toBeGreaterThan(0)
         linesNode.dispatchEvent(buildMouseEvent('mousemove', {
           clientX: 100,
           clientY: 100
@@ -2674,7 +2674,7 @@ describe('TextEditorComponent', function () {
 
         expect(wrapperNode.getScrollTop()).toBeGreaterThan(0)
         let previousScrollTop = wrapperNode.getScrollTop()
-        let previousScrollLeft = wrapperNode.getScrollLeft()
+        let previousScrollLeft = component.scrollViewNode.scrollLeft
 
         linesNode.dispatchEvent(buildMouseEvent('mousemove', {
           clientX: 10,
@@ -2688,7 +2688,7 @@ describe('TextEditorComponent', function () {
         }
 
         expect(wrapperNode.getScrollTop()).toBe(previousScrollTop)
-        expect(wrapperNode.getScrollLeft()).toBeLessThan(previousScrollLeft)
+        expect(component.scrollViewNode.scrollLeft).toBeLessThan(previousScrollLeft)
         linesNode.dispatchEvent(buildMouseEvent('mousemove', {
           clientX: 10,
           clientY: 10
@@ -2955,7 +2955,7 @@ describe('TextEditorComponent', function () {
 
     describe('when the horizontal scrollbar is interacted with', function () {
       it('clicking on the scrollbar does not move the cursor', function () {
-        let target = horizontalScrollbarNode
+        let target = component.scrollViewNode
         linesNode.dispatchEvent(buildMouseEvent('mousedown', clientCoordinatesForScreenPosition([4, 8]), {
           target: target
         }))
@@ -3486,10 +3486,10 @@ describe('TextEditorComponent', function () {
       editor.update({autoHeight: false})
       component.measureDimensions()
       runAnimationFrames()
-      expect(verticalScrollbarNode.scrollTop).toBe(0)
+      expect(component.scrollViewNode.scrollTop).toBe(0)
       wrapperNode.setScrollTop(10)
       runAnimationFrames()
-      expect(verticalScrollbarNode.scrollTop).toBe(10)
+      expect(component.scrollViewNode.scrollTop).toBe(10)
     })
 
     it('updates the horizontal scrollbar and the x transform of the lines based on the scrollLeft of the model', function () {
@@ -3503,7 +3503,7 @@ describe('TextEditorComponent', function () {
         expect(tileNode.style['-webkit-transform']).toBe('translate3d(0px, ' + top + 'px, 0px)')
         top += tileNode.offsetHeight
       }
-      expect(horizontalScrollbarNode.scrollLeft).toBe(0)
+      expect(component.scrollViewNode.scrollLeft).toBe(0)
       wrapperNode.setScrollLeft(100)
 
       runAnimationFrames()
@@ -3513,18 +3513,18 @@ describe('TextEditorComponent', function () {
         expect(tileNode.style['-webkit-transform']).toBe('translate3d(-100px, ' + top + 'px, 0px)')
         top += tileNode.offsetHeight
       }
-      expect(horizontalScrollbarNode.scrollLeft).toBe(100)
+      expect(component.scrollViewNode.scrollLeft).toBe(100)
     })
 
     it('updates the scrollLeft of the model when the scrollLeft of the horizontal scrollbar changes', function () {
       componentNode.style.width = 30 * charWidth + 'px'
       component.measureDimensions()
       runAnimationFrames()
-      expect(wrapperNode.getScrollLeft()).toBe(0)
-      horizontalScrollbarNode.scrollLeft = 100
-      horizontalScrollbarNode.dispatchEvent(new UIEvent('scroll'))
+      expect(component.scrollViewNode.scrollLeft).toBe(0)
+      component.scrollViewNode.scrollLeft = 100
+      component.scrollViewNode.dispatchEvent(new UIEvent('scroll'))
       runAnimationFrames(true)
-      expect(wrapperNode.getScrollLeft()).toBe(100)
+      expect(component.scrollViewNode.scrollLeft).toBe(100)
     })
 
     it('does not obscure the last line with the horizontal scrollbar', function () {
@@ -3537,7 +3537,7 @@ describe('TextEditorComponent', function () {
 
       let lastLineNode = component.lineNodeForScreenRow(editor.getLastScreenRow())
       let bottomOfLastLine = lastLineNode.getBoundingClientRect().bottom
-      topOfHorizontalScrollbar = horizontalScrollbarNode.getBoundingClientRect().top
+      topOfHorizontalScrollbar = component.scrollViewNode.getBoundingClientRect().top
       expect(bottomOfLastLine).toBe(topOfHorizontalScrollbar)
       wrapperNode.style.width = 100 * charWidth + 'px'
       component.measureDimensions()
@@ -3557,34 +3557,34 @@ describe('TextEditorComponent', function () {
 
       runAnimationFrames()
       let rightOfLongestLine = component.lineNodeForScreenRow(6).querySelector('.line > span:last-child').getBoundingClientRect().right
-      let leftOfVerticalScrollbar = verticalScrollbarNode.getBoundingClientRect().left
+      let leftOfVerticalScrollbar = component.scrollViewNode.getBoundingClientRect().left
       expect(Math.round(rightOfLongestLine)).toBeCloseTo(leftOfVerticalScrollbar - 1, 0)
     })
 
     it('only displays dummy scrollbars when scrollable in that direction', function () {
-      expect(verticalScrollbarNode.style.display).toBe('none')
-      expect(horizontalScrollbarNode.style.display).toBe('none')
+      expect(component.scrollViewNode.style.display).toBe('none')
+      expect(component.scrollViewNode.style.display).toBe('none')
       wrapperNode.style.height = 4.5 * lineHeightInPixels + 'px'
       wrapperNode.style.width = '1000px'
       editor.update({autoHeight: false})
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.display).toBe('')
-      expect(horizontalScrollbarNode.style.display).toBe('none')
+      expect(component.scrollViewNode.style.display).toBe('')
+      expect(component.scrollViewNode.style.display).toBe('none')
       componentNode.style.width = 10 * charWidth + 'px'
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.display).toBe('')
-      expect(horizontalScrollbarNode.style.display).toBe('')
+      expect(component.scrollViewNode.style.display).toBe('')
+      expect(component.scrollViewNode.style.display).toBe('')
       wrapperNode.style.height = 20 * lineHeightInPixels + 'px'
       editor.update({autoHeight: false})
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.display).toBe('none')
-      expect(horizontalScrollbarNode.style.display).toBe('')
+      expect(component.scrollViewNode.style.display).toBe('none')
+      expect(component.scrollViewNode.style.display).toBe('')
     })
 
     it('makes the dummy scrollbar divs only as tall/wide as the actual scrollbars', function () {
@@ -3602,7 +3602,7 @@ describe('TextEditorComponent', function () {
       runAnimationFrames()
 
       let scrollbarCornerNode = componentNode.querySelector('.scrollbar-corner')
-      expect(verticalScrollbarNode.offsetWidth).toBe(8)
+      expect(component.scrollViewNode.offsetWidth).toBe(8)
       expect(horizontalScrollbarNode.offsetHeight).toBe(8)
       expect(scrollbarCornerNode.offsetWidth).toBe(8)
       expect(scrollbarCornerNode.offsetHeight).toBe(8)
@@ -3611,7 +3611,7 @@ describe('TextEditorComponent', function () {
 
     it('assigns the bottom/right of the scrollbars to the width of the opposite scrollbar if it is visible', function () {
       let scrollbarCornerNode = componentNode.querySelector('.scrollbar-corner')
-      expect(verticalScrollbarNode.style.bottom).toBe('0px')
+      expect(component.scrollViewNode.style.bottom).toBe('0px')
       expect(horizontalScrollbarNode.style.right).toBe('0px')
       wrapperNode.style.height = 4.5 * lineHeightInPixels + 'px'
       wrapperNode.style.width = '1000px'
@@ -3619,22 +3619,22 @@ describe('TextEditorComponent', function () {
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.bottom).toBe('0px')
-      expect(horizontalScrollbarNode.style.right).toBe(verticalScrollbarNode.offsetWidth + 'px')
+      expect(component.scrollViewNode.style.bottom).toBe('0px')
+      expect(horizontalScrollbarNode.style.right).toBe(component.scrollViewNode.offsetWidth + 'px')
       expect(scrollbarCornerNode.style.display).toBe('none')
       componentNode.style.width = 10 * charWidth + 'px'
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.bottom).toBe(horizontalScrollbarNode.offsetHeight + 'px')
-      expect(horizontalScrollbarNode.style.right).toBe(verticalScrollbarNode.offsetWidth + 'px')
+      expect(component.scrollViewNode.style.bottom).toBe(horizontalScrollbarNode.offsetHeight + 'px')
+      expect(horizontalScrollbarNode.style.right).toBe(component.scrollViewNode.offsetWidth + 'px')
       expect(scrollbarCornerNode.style.display).toBe('')
       wrapperNode.style.height = 20 * lineHeightInPixels + 'px'
       editor.update({autoHeight: false})
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(verticalScrollbarNode.style.bottom).toBe(horizontalScrollbarNode.offsetHeight + 'px')
+      expect(component.scrollViewNode.style.bottom).toBe(horizontalScrollbarNode.offsetHeight + 'px')
       expect(horizontalScrollbarNode.style.right).toBe('0px')
       expect(scrollbarCornerNode.style.display).toBe('none')
     })
@@ -3645,7 +3645,7 @@ describe('TextEditorComponent', function () {
       component.measureDimensions()
       runAnimationFrames()
 
-      expect(horizontalScrollbarNode.scrollWidth).toBe(wrapperNode.getScrollWidth())
+      expect(horizontalScrollbarNode.scrollWidth).toBe(component.scrollViewNode.scrollWidth)
       expect(horizontalScrollbarNode.style.left).toBe('0px')
     })
   })
@@ -3665,7 +3665,7 @@ describe('TextEditorComponent', function () {
       })
 
       it('updates the scrollLeft or scrollTop on mousewheel events depending on which delta is greater (x or y)', function () {
-        expect(verticalScrollbarNode.scrollTop).toBe(0)
+        expect(component.scrollViewNode.scrollTop).toBe(0)
         expect(horizontalScrollbarNode.scrollLeft).toBe(0)
         componentNode.dispatchEvent(new WheelEvent('mousewheel', {
           wheelDeltaX: -5,
@@ -3673,7 +3673,7 @@ describe('TextEditorComponent', function () {
         }))
         runAnimationFrames()
 
-        expect(verticalScrollbarNode.scrollTop).toBe(10)
+        expect(component.scrollViewNode.scrollTop).toBe(10)
         expect(horizontalScrollbarNode.scrollLeft).toBe(0)
         componentNode.dispatchEvent(new WheelEvent('mousewheel', {
           wheelDeltaX: -15,
@@ -3681,7 +3681,7 @@ describe('TextEditorComponent', function () {
         }))
         runAnimationFrames()
 
-        expect(verticalScrollbarNode.scrollTop).toBe(10)
+        expect(component.scrollViewNode.scrollTop).toBe(10)
         expect(horizontalScrollbarNode.scrollLeft).toBe(15)
       })
 
@@ -3700,7 +3700,7 @@ describe('TextEditorComponent', function () {
         }))
         runAnimationFrames()
 
-        expect(verticalScrollbarNode.scrollTop).toBe(5)
+        expect(component.scrollViewNode.scrollTop).toBe(5)
         expect(horizontalScrollbarNode.scrollLeft).toBe(7)
       })
     })
@@ -3923,7 +3923,7 @@ describe('TextEditorComponent', function () {
         wheelDeltaX: 50,
         wheelDeltaY: 0
       }))
-      expect(wrapperNode.getScrollLeft()).toBe(0)
+      expect(component.scrollViewNode.scrollLeft).toBe(0)
       expect(WheelEvent.prototype.preventDefault).not.toHaveBeenCalled()
       componentNode.dispatchEvent(new WheelEvent('mousewheel', {
         wheelDeltaX: -3000,
@@ -3931,14 +3931,14 @@ describe('TextEditorComponent', function () {
       }))
       runAnimationFrames()
 
-      let maxScrollLeft = wrapperNode.getScrollLeft()
+      let maxScrollLeft = component.scrollViewNode.scrollLeft
       expect(WheelEvent.prototype.preventDefault).toHaveBeenCalled()
       WheelEvent.prototype.preventDefault.reset()
       componentNode.dispatchEvent(new WheelEvent('mousewheel', {
         wheelDeltaX: -30,
         wheelDeltaY: 0
       }))
-      expect(wrapperNode.getScrollLeft()).toBe(maxScrollLeft)
+      expect(component.scrollViewNode.scrollLeft).toBe(maxScrollLeft)
       expect(WheelEvent.prototype.preventDefault).not.toHaveBeenCalled()
     })
   })
@@ -4679,7 +4679,7 @@ describe('TextEditorComponent', function () {
         runAnimationFrames()
 
         expect(wrapperNode.getScrollTop()).toBe(0)
-        expect(wrapperNode.getScrollLeft()).toBe(0)
+        expect(component.scrollViewNode.scrollLeft).toBe(0)
         editor.setSelectedBufferRange([[6, 6], [6, 8]])
         runAnimationFrames()
 
@@ -4745,7 +4745,7 @@ describe('TextEditorComponent', function () {
         runAnimationFrames()
 
         expect(wrapperNode.getScrollTop()).toBe(0)
-        expect(wrapperNode.getScrollLeft()).toBe(0)
+        expect(component.scrollViewNode.scrollLeft).toBe(0)
         editor.scrollToCursorPosition()
         runAnimationFrames()
 
@@ -4802,7 +4802,7 @@ describe('TextEditorComponent', function () {
       })
 
       it('scrolls right when the last cursor gets closer than ::horizontalScrollMargin to the right of the editor', function () {
-        expect(wrapperNode.getScrollLeft()).toBe(0)
+        expect(component.scrollViewNode.scrollLeft).toBe(0)
         expect(wrapperNode.getScrollRight()).toBe(5.5 * 10)
         editor.setCursorScreenPosition([0, 2])
         runAnimationFrames()
@@ -4822,10 +4822,10 @@ describe('TextEditorComponent', function () {
       })
 
       it('scrolls left when the last cursor gets closer than ::horizontalScrollMargin to the left of the editor', function () {
-        wrapperNode.setScrollRight(wrapperNode.getScrollWidth())
+        wrapperNode.setScrollRight(component.scrollViewNode.scrollWidth)
         runAnimationFrames()
 
-        expect(wrapperNode.getScrollRight()).toBe(wrapperNode.getScrollWidth())
+        expect(wrapperNode.getScrollRight()).toBe(component.scrollViewNode.scrollWidth)
         editor.setCursorScreenPosition([6, 62], {
           autoscroll: false
         })
@@ -4836,12 +4836,12 @@ describe('TextEditorComponent', function () {
 
         let margin = component.presenter.getHorizontalScrollMarginInPixels()
         let left = wrapperNode.pixelPositionForScreenPosition([6, 61]).left - margin
-        expect(wrapperNode.getScrollLeft()).toBeCloseTo(left, 0)
+        expect(component.scrollViewNode.scrollLeft).toBeCloseTo(left, 0)
         editor.moveLeft()
         runAnimationFrames()
 
         left = wrapperNode.pixelPositionForScreenPosition([6, 60]).left - margin
-        expect(wrapperNode.getScrollLeft()).toBeCloseTo(left, 0)
+        expect(component.scrollViewNode.scrollLeft).toBeCloseTo(left, 0)
       })
 
       it('scrolls down when inserting lines makes the document longer than the editor\'s height', function () {
@@ -5052,7 +5052,7 @@ describe('TextEditorComponent', function () {
     let clientX, clientY, positionOffset, scrollViewClientRect
     positionOffset = wrapperNode.pixelPositionForScreenPosition(screenPosition)
     scrollViewClientRect = componentNode.querySelector('.scroll-view').getBoundingClientRect()
-    clientX = scrollViewClientRect.left + positionOffset.left - wrapperNode.getScrollLeft()
+    clientX = scrollViewClientRect.left + positionOffset.left - component.scrollViewNode.scrollLeft
     clientY = scrollViewClientRect.top + positionOffset.top - wrapperNode.getScrollTop()
     return {
       clientX: clientX,
@@ -5064,7 +5064,7 @@ describe('TextEditorComponent', function () {
     let clientX, clientY, gutterClientRect, positionOffset
     positionOffset = wrapperNode.pixelPositionForScreenPosition([screenRow, Infinity])
     gutterClientRect = componentNode.querySelector('.gutter').getBoundingClientRect()
-    clientX = gutterClientRect.left + positionOffset.left - wrapperNode.getScrollLeft()
+    clientX = gutterClientRect.left + positionOffset.left - component.scrollViewNode.scrollLeft
     clientY = gutterClientRect.top + positionOffset.top - wrapperNode.getScrollTop()
     return {
       clientX: clientX,

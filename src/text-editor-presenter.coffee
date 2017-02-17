@@ -67,6 +67,7 @@ class TextEditorPresenter
   transferMeasurementsToModel: ->
     @model.setLineHeightInPixels(@lineHeight) if @lineHeight?
     @model.setDefaultCharWidth(@baseCharacterWidth) if @baseCharacterWidth?
+    @model.setWidth(@contentFrameWidth) if @contentFrameWidth?
 
   transferMeasurementsFromModel: ->
     @editorWidthInChars = @model.getEditorWidthInChars()
@@ -692,6 +693,7 @@ class TextEditorPresenter
   setContentFrameWidth: (contentFrameWidth) ->
     if @contentFrameWidth isnt contentFrameWidth or @editorWidthInChars?
       @contentFrameWidth = contentFrameWidth
+      @model.setWidth(@contentFrameWidth, true)
       @editorWidthInChars = null
       @invalidateAllBlockDecorationsDimensions = true
       @shouldUpdateDecorations = true
