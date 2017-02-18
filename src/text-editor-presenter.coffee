@@ -232,12 +232,15 @@ class TextEditorPresenter
 
     {top, left, height, width} = @pixelRectForScreenRange(lastCursor.getScreenRange())
 
+    # The hidden input will cause the scroll view to scroll to the left when focused
+    # if it is placed exactly at the scroll view's scrollLeft position. So we place
+    # it one pixel further to the right.
     if @focused
-      @state.hiddenInput.top = Math.max(Math.min(top, @scrollTop + @height - height), @scrollTop)
-      @state.hiddenInput.left = Math.max(Math.min(left, @scrollLeft + @contentFrameWidth - width), @scrollLeft)
+      @state.hiddenInput.top = Math.max(Math.min(top, @realScrollTop + @height - height), @realScrollTop)
+      @state.hiddenInput.left = Math.max(Math.min(left, @realScrollLeft + @contentFrameWidth - width), @scrollLeft + 1)
     else
       @state.hiddenInput.top = @realScrollTop
-      @state.hiddenInput.left = @realScrollLeft
+      @state.hiddenInput.left = @scrollLeft + 1
 
     @state.hiddenInput.height = height
     @state.hiddenInput.width = Math.max(width, 2)
@@ -623,19 +626,23 @@ class TextEditorPresenter
     if scrollTop isnt @realScrollTop and not Number.isNaN(scrollTop)
       @realScrollTop = scrollTop
       @scrollTop = Math.round(scrollTop)
+      @shouldUpdateDecorations = true
       @model.setFirstVisibleScreenRow(Math.round(@scrollTop / @lineHeight), true)
 
       @updateStartRow()
       @updateEndRow()
-      @emitter.emit 'did-change-scroll-top', @scrollTop
+      true
+    else
+      false
 
   updateScrollLeft: (scrollLeft) ->
     if scrollLeft isnt @realScrollLeft and not Number.isNaN(scrollLeft)
       @realScrollLeft = scrollLeft
       @scrollLeft = Math.round(scrollLeft)
       @model.setFirstVisibleScreenColumn(Math.round(@scrollLeft / @baseCharacterWidth))
-
-      @emitter.emit 'did-change-scroll-left', @scrollLeft
+      true
+    else
+      false
 
   lineDecorationClassesForRow: (row) ->
     return null if @model.isMini()
@@ -1216,24 +1223,21 @@ class TextEditorPresenter
     horizontalScrollMarginInPixels = @getHorizontalScrollMarginInPixels()
     {left} = @pixelRectForScreenRange(new Range(screenRange.start, screenRange.start))
     {left: right} = @pixelRectForScreenRange(new Range(screenRange.end, screenRange.end))
-    scrollRight = @scrollLeft + @width
-
-    left += @scrollLeft
-    right += @scrollLeft
+    scrollRight = @scrollLeft + @contentFrameWidth
 
     desiredScrollLeft = left - horizontalScrollMarginInPixels
     desiredScrollRight = right + horizontalScrollMarginInPixels
 
     if options?.reversed ? true
       if desiredScrollRight > scrollRight
-        result.scrollLeft = desiredScrollRight - @width
+        result.scrollLeft = desiredScrollRight - @contentFrameWidth
       if desiredScrollLeft < @scrollLeft
         result.scrollLeft = desiredScrollLeft
     else
       if desiredScrollLeft < @scrollLeft
         result.scrollLeft = desiredScrollLeft
       if desiredScrollRight > scrollRight
-        result.scrollLeft = desiredScrollRight - @width
+        result.scrollLeft = desiredScrollRight - @contentFrameWidth
 
     result
 

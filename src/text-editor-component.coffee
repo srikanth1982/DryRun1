@@ -1,6 +1,6 @@
 scrollbarStyle = require 'scrollbar-style'
 {Range, Point} = require 'text-buffer'
-{CompositeDisposable, Disposable} = require 'event-kit'
+{Emitter, CompositeDisposable, Disposable} = require 'event-kit'
 {ipcRenderer} = require 'electron'
 Grim = require 'grim'
 elementResizeDetector = require('element-resize-detector')({strategy: 'scroll'})
@@ -43,6 +43,7 @@ class TextEditorComponent
 
   constructor: ({@editor, @hostElement, tileSize, @views, @themes, @styles, @assert, hiddenInputElement}) ->
     @tileSize = tileSize if tileSize?
+    @emitter = new Emitter
     @disposables = new CompositeDisposable
 
     lineTopIndex = new LineTopIndex({
@@ -128,9 +129,6 @@ class TextEditorComponent
     @domNode
 
   updateSync: ->
-    if @updateInProgress
-      throw new Error('HA!!')
-    @updateInProgress = true
     {scrollTop, scrollLeft} = @presenter.getPendingAutoscroll()
     @setScrollTop(scrollTop) if scrollTop?
     @setScrollLeft(scrollLeft) if scrollLeft?
@@ -184,8 +182,6 @@ class TextEditorComponent
     if @editor.isAlive()
       @updateParentViewFocusedClassIfNeeded()
       @updateParentViewMiniClass()
-
-    @updateInProgress = false
 
   updateSyncPreMeasurement: ->
     @linesComponent.updateSync(@presenter.getPreMeasurementState())
@@ -381,29 +377,36 @@ class TextEditorComponent
     @measureScrollPosition()
 
   measureScrollPosition: ->
-    @presenter.updateScrollTop(@scrollViewNode.scrollTop)
-    @presenter.updateScrollLeft(@scrollViewNode.scrollLeft)
+    {scrollTop, scrollLeft} = @scrollViewNode
+    scrollTopChanged = @presenter.updateScrollTop(scrollTop)
+    scrollLeftChanged = @presenter.updateScrollLeft(scrollLeft)
     @updateSync()
+    if scrollTopChanged
+      @emitter.emit('did-change-scroll-top', scrollTop)
+    if scrollLeftChanged
+      @emitter.emit('did-change-scroll-left', scrollLeft)
 
   onDidChangeScrollTop: (callback) ->
-    # @presenter.onDidChangeScrollTop(callback)
+    @emitter.on('did-change-scroll-top', callback)
 
   onDidChangeScrollLeft: (callback) ->
-    # @presenter.onDidChangeScrollLeft(callback)
+    @emitter.on('did-change-scroll-left', callback)
 
   setScrollLeft: (scrollLeft) ->
     @scrollViewNode.scrollLeft = scrollLeft
     @presenter.updateScrollLeft(@scrollViewNode.scrollLeft)
 
   setScrollRight: (scrollRight) ->
-    @presenter.setScrollRight(scrollRight)
+    @scrollViewNode.scrollLeft = scrollRight - @scrollViewNode.clientWidth
+    @presenter.updateScrollLeft(@scrollViewNode.scrollLeft)
 
   setScrollTop: (scrollTop) ->
     @scrollViewNode.scrollTop = scrollTop
     @presenter.updateScrollTop(@scrollViewNode.scrollTop)
 
   setScrollBottom: (scrollBottom) ->
-    @presenter.setScrollBottom(scrollBottom)
+    @scrollViewNode.scrollTop = scrollBottom - @scrollViewNode.clientHeight
+    @presenter.updateScrollTop(@scrollViewNode.scrollTop)
 
   getScrollTop: ->
     @scrollViewNode.scrollTop
@@ -412,25 +415,25 @@ class TextEditorComponent
     @scrollViewNode.scrollLeft
 
   getScrollRight: ->
-    @presenter.getScrollRight()
+    @scrollViewNode.scrollLeft + @scrollViewNode.clientWidth
 
   getScrollBottom: ->
-    @presenter.getScrollBottom()
+    @scrollViewNode.scrollTop + @scrollViewNode.clientHeight
 
   getScrollHeight: ->
-    @presenter.getScrollHeight()
+    @scrollViewNode.scrollHeight
 
   getScrollWidth: ->
-    @presenter.getScrollWidth()
+    @scrollViewNode.scrollWidth
 
   getMaxScrollTop: ->
-    @presenter.getMaxScrollTop()
+    @scrollViewNode.scrollHeight - @scrollViewNode.clientHeight
 
   getVerticalScrollbarWidth: ->
-    @presenter.getVerticalScrollbarWidth()
+    @scrollViewNode.offsetWidth - @scrollViewNode.clientWidth
 
   getHorizontalScrollbarHeight: ->
-    @presenter.getHorizontalScrollbarHeight()
+    @scrollViewNode.offsetHeight - @scrollViewNode.clientHeight
 
   getVisibleRowRange: ->
     @presenter.getVisibleRowRange()
