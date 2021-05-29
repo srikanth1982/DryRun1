@@ -15,3 +15,4 @@ spec/fixtures/sample.txt text eol=lf
 
 # Windows bash scripts are also Unix LF endings
 *.sh		eol=lf
+ 
